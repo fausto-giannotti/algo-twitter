@@ -8,6 +8,9 @@ RESULTADOS_BUSQUEDA = "Resultados de la busqueda:"
 TWEETS_ELIMINADOS = "Tweets eliminados:"
 ATRAS = "**"
 
+# errores validacion 1-10, 15-44, 46-52, 54, 55, 57-67
+# resolver lo de poder eliminar con comas (o sea que 1, 2, 3, 7-10) funcione
+
 
 def main():
 
@@ -26,32 +29,37 @@ def main():
             ">>> "
         )
 
-        # cada funcion recibe parametros de los dicts/variables necesarias
-        # para ejecutarse
+        # cada funcion recibe parametros de los dicts/variables necesarias para ejecutarse
 
         if user_input == "1":
-
             resultado = crear_tweet(id, tweets, tweets_normalizados_tokenizado)
 
             # si tweet es valido actualiza id con ultimo valor:
             try:
                 id = int(resultado.split()[1])
 
-            # si tweet no es valido, valor de id se mantiene
-            # es decir, se ejecuta return id
-            # en ese caso, al intentar usar .split() para un int,
-            # ocurrira AttributeError --> si eso ocurre continuar
-
+            # si tweet no es valido, valor de id se mantiene es decir, se ejecuta return id
+            # en ese caso, al intentar usar .split() para un int, ocurrira AttributeError
             except AttributeError:
                 continue
 
             print(resultado)  # de la forma "OK {id}"
-
         elif user_input == "2":
-            texto_a_buscar = input("Ingrese la/s palabra/s clave a buscar:\n2>>> ")
+            texto_a_buscar = input("Ingrese la/s palabra/s clave a buscar:\n>>> ")
             buscar_tweet(tweets, tweets_normalizados_tokenizado, texto_a_buscar)
         elif user_input == "3":
-            eliminar_tweet(tweets, tweets_normalizados_tokenizado)
+            busqueda_para_eliminar = input("Ingrese el tweet a eliminar:\n >>> ")
+            if busqueda_para_eliminar == ATRAS:
+                continue
+            lista_de_ids_limpia = validar_ids_eliminar(
+                tweets, tweets_normalizados_tokenizado, busqueda_para_eliminar
+            )
+
+            if lista_de_ids_limpia == ATRAS or lista_de_ids_limpia is None:
+                continue
+
+            eliminar_tweet(tweets, tweets_normalizados_tokenizado, lista_de_ids_limpia)
+
         elif user_input == "4":
             return print(FIN)
         else:
@@ -190,21 +198,23 @@ def tokenizar(tweet_normalizado):
 
                 # para cada fin posible, desde inicio + 3 (min 3 caracteres)
                 # hasta el final de la palabra:
+
                 # ej: si inicio = 0 y len(palabra) = 4 ("hola"):
-                # el rango sería range(3, 4+1) = [3, 4, 5]
+                # el rango sería range(3, 4+1) = [3, 4, 5] = 3 iteraciones
                 #     inicio = 0, fin = 3 => palabra[0:3] = "hol"
                 #     inicio = 0, fin = 4 => palabra[0:4] = "hola"
                 # desp inicio = 1:
                 #     inicio = 1, fin = 4 => palabra[1:4] = "ola"
                 #     inicio = 1, fin = 5 => palabra[1:5] = "ola"
-                # Y así hasta con con todas las palabras
+                # --> si ya esta almacenado no lo almacena de vuelta
+                # y así con todas las palabras
 
                 for fin in range(inicio + 3, len(palabra) + 1):
                     segmento = palabra[inicio:fin]
 
                     # para cada caracter, ir desde su pos a pos+3, +4, +n hasta
-                    # llegar al final de la palabra y almecenar cada
-                    # combinacion
+                    # llegar al final de la palabra; desp arranca desde pos+3+1
+                    # y repite hasta almecenar cada combinacion
 
                     # no volver a almacenar segmentos ya almacenados
                     if segmento not in tweet_tokenizado:
@@ -262,7 +272,8 @@ def buscar_tweet(tweets, tweets_normalizados_tokenizado, texto_a_buscar):
                     continue
 
     if ids_coincidentes == []:
-        return print(NO_ENCONTRADOS)
+        print(NO_ENCONTRADOS)
+        return NO_ENCONTRADOS
 
     print("Resultado de la busqueda:")
 
@@ -274,27 +285,31 @@ def buscar_tweet(tweets, tweets_normalizados_tokenizado, texto_a_buscar):
 
 
 """
-Eliminar tweet: el usuario ingresa texto del tweet a eliminar
-si el texto (normalizado y tokenizado es valido) entonces se usa
-la funcion buscar_tweet para encontrar coincidencias -->
-hasta aca todo lo hace buscar_tweet
+Validar ids a eliminar:
+esta funcion llama a buscar_tweets para buscar coincidencias con input;
+en base a dichas coincidencias, pide al usuario que ingrese ids a eliminar
+verifica que esos ids sean numeros o rangos y que coicidan con el resultado
+de la busqueda --> devuelve lista de ids eliminables
+
+Eliminar tweet: llama a la fu
 """
 
 
-def eliminar_tweet(tweets, tweets_normalizados_tokenizado):
+def validar_ids_eliminar(
+    tweets, tweets_normalizados_tokenizado, busqueda_para_eliminar
+):
 
-    busqueda_para_eliminar = input("Ingrese el tweet a eliminar:\n >>> ")
-
-    if busqueda_para_eliminar == ATRAS:
-        return
+    # donde se almacenan id sin rangos
+    # ej: si input 3-5 se almacena 3, 4, 5
+    lista_de_ids_limpia = []
 
     ids_coincidentes = buscar_tweet(
         tweets, tweets_normalizados_tokenizado, busqueda_para_eliminar
     )
 
     # si buscar no encuentra coicidencias, terminar funcion
-    if not ids_coincidentes:
-        return
+    if ids_coincidentes == NO_ENCONTRADOS:
+        return None
 
     ids_a_eliminar = input("Ingrese los numeros de tweets a eliminar:\n>>> ")
 
@@ -302,45 +317,57 @@ def eliminar_tweet(tweets, tweets_normalizados_tokenizado):
 
     # comprobamos que los valores sean nums o rangos
     for numero_o_rango in lista_ids_a_eliminar:
-        numero_o_rango = numero_o_rango.strip()  # eliminar espacios de mas
-        if not (numero_o_rango.isdigit() or "-" in numero_o_rango):
-            print(INPUT_INVALIDO)
-            return INPUT_INVALIDO
 
-    lista_de_ids_limpia = []
-
-    # los elementos de numero_o_rango son de la fomra:
-    # a, o a-b
-
-    for numero_o_rango in lista_ids_a_eliminar:
         numero_o_rango = numero_o_rango.strip()  # eliminar espacios de mas
 
-        # si es un num, se agrega a la lista
-        if numero_o_rango.isdigit():
-            lista_de_ids_limpia.append(int(numero_o_rango))
+        # if not (numero_o_rango.isdigit() or "-" in numero_o_rango):
+        #    print(INPUT_INVALIDO)
+        #    return None
 
-        # si es un rango, se agregan todos los nums. del rango a ella
+        if numero_o_rango.isdigit():  # si es un num, se agrega a la lista
 
-        elif "-" in numero_o_rango:  # si es un rango
+            id = int(numero_o_rango)
+
+            if id not in ids_coincidentes:
+                print(NUMERO_INVALIDO)
+                return None
+
+            lista_de_ids_limpia.append(id)
+
+        elif (
+            "-" in numero_o_rango
+        ):  # si es un rango se agregan todos los nums. del rango a ella
             inicio, fin = numero_o_rango.split("-")
 
             for id in range(int(inicio), int(fin) + 1):
                 lista_de_ids_limpia.append(id)
+
+        else:
+            print(INPUT_INVALIDO)
+            return None
+
+        return lista_de_ids_limpia
+
+
+def eliminar_tweet(tweets, tweets_normalizados_tokenizado, lista_de_ids_limpia):
 
     # se elimnan todos los tweets para los ids indicados
     # pero antes se confirma que existen
     # si se intenta acceder a una clave inexsitente = KeyError
 
     for id in lista_de_ids_limpia:
-        try:
-            tweet = tweets[id]
-        except KeyError:
-            print(NUMERO_INVALIDO)
-            return NUMERO_INVALIDO
+
+        tweet = tweets[id]
+
+        # try:
+        #    tweet = tweets[id]
+        # except KeyError:
+        #    print(NUMERO_INVALIDO)
+        #    return NUMERO_INVALIDO
 
         # si todos los id existen, se elimnan los tweets correspondinetes
 
-        tweets.remove(id)
+        del tweets[id]
 
         # si el tweet existe, eliminamos los tokens asociados en el dict
         tweet_normalizado = normalizar(tweet)
