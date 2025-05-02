@@ -325,8 +325,8 @@ def eliminar_tweets(tweets, tweets_normalizados_tokenizado):
             return None
 
 
-def borrar_tweet_asociado_a_id(id, tweet, tweets):
-    del tweets[id]
+# def borrar_tweet_asociado_a_id(id, tweet, tweets):
+#    del tweets[id]
 
 
 def borrar_id_asociado_a_token(id, tweet, tweets_normalizados_tokenizado):
@@ -411,7 +411,7 @@ def eliminar_ids_de_tweets(lista_de_ids, tweets, tweets_normalizados_tokenizado)
 
         tweet = tweets[id]
         print(f"{id}. {tweet}")
-        borrar_id_asociado_a_token(id, tweet, tweets)
+        # borrar_id_asociado_a_token(id, tweet, tweets)
         borrar_id_asociado_a_token(id, tweet, tweets_normalizados_tokenizado)
 
 
