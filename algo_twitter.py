@@ -1,5 +1,3 @@
-# aca voy a hacer todo el desarollo
-
 NUMERO_INVALIDO = "Numero de tweet invalido."
 NO_ENCONTRADOS = "No se encontraron tweets."
 INPUT_INVALIDO = "Input invalido."
@@ -7,6 +5,18 @@ FIN = "Finalizando..."
 RESULTADOS_BUSQUEDA = "Resultados de la busqueda:"
 TWEETS_ELIMINADOS = "Tweets eliminados:"
 ATRAS = "**"
+
+MENU = "1. Crear Tweet\n" "2. Buscar Tweet\n" "3. Eliminar Tweet\n" "4. Salir\n" ">>> "
+CREAR_TWEET = "1"
+BUSCAR_TWEET = "2"
+ELIMINAR_TWEET = "3"
+FINALIZAR = "4"
+
+INGRESE_TWEET = "Ingrese el tweet a almacenar: "
+INGRESE_BUSQUEDA = "Ingrese la/s palabra/s clave a buscar:\n>>> "
+INGRESE_TWEETS_ELIMINAR = "Ingrese los numeros de tweets a eliminar:\n>>> "
+
+LEN_TOKENIZACION = 3
 
 
 def main():
@@ -17,27 +27,21 @@ def main():
 
     while True:
 
-        user_input = input(
-            "1. Crear Tweet\n"
-            "2. Buscar Tweet\n"
-            "3. Eliminar Tweet\n"
-            "4. Salir\n"
-            ">>> "
-        )
+        user_input = input(MENU)
 
-        if user_input == "1":
+        if user_input == CREAR_TWEET:
             # crear_tweet devuelve id+1 (solo si efectivamente se guarda el token)
             # caso contrario (o sea input == **) devuelve el mismo id
 
             id = crear_tweet(id, tweets, tweets_normalizados_tokenizados)
 
-        elif user_input == "2":
+        elif user_input == BUSCAR_TWEET:
             buscar_tweet(tweets, tweets_normalizados_tokenizados)
 
-        elif user_input == "3":
+        elif user_input == ELIMINAR_TWEET:
             eliminar_tweets(tweets, tweets_normalizados_tokenizados)
 
-        elif user_input == "4":
+        elif user_input == FINALIZAR:
             print(FIN)
             break
 
@@ -47,29 +51,17 @@ def main():
 
 # -----------------------------------------------------------------------------
 
-"""
-Crear tweet: el usuario ingresa un tweet que se almacena con su respectivo
-id (que es unico e irrepetible)
-
-Id se recibe como parametro por crear_tweet para poder tener en cuenta valor
-pervio del id; de forma similar los dicts son recibidos por crear_tweet para
-poder trabajar con ellos
-
-Output esperado: OK id_tweet
-
-Si tweet almacenado (i.e. normalizado) == vacío, entonces input invalido
-
-Se utilizaran 2 diccionarios, uno con el tweet tal cual y otro con el tweet
-normalizado y tokenizado donde cada token es una clave y sus valores son los
-ids de los tweets que coinciden
-"""
-
 
 def crear_tweet(id, tweets, tweets_normalizados_tokenizados):
+    """
+    El usuario ingresa un tweet que se almacena con su respectivo id (que es
+    unico e irrepetible); id se recibe como parametro por para poder  tener
+    en cuenta valor pervio del id y sumarle 1.
+    """
 
     while True:  # hasta recibir input valido o ATRAS
 
-        tweet_a_almacenar = input("Ingrese el tweet a almacenar: ")
+        tweet_a_almacenar = input(INGRESE_TWEET)
 
         if tweet_a_almacenar == ATRAS:
             return id
@@ -97,8 +89,7 @@ def crear_tweet(id, tweets, tweets_normalizados_tokenizados):
 
         print(f"OK {id}")
 
-        id += 1
-        return id
+        return id + 1
 
 
 def normalizar(tweet):
@@ -162,15 +153,15 @@ def tokenizar(tweet_normalizado):
 
     for palabra in lista_de_palabras:
 
-        # si longitud palabra menor que 3, se almacena directo
-        if len(palabra) < 3:
+        # si longitud palabra menor que LEN_TOKENIZACION (= 3), se almacena directo
+        if len(palabra) < LEN_TOKENIZACION:
             if palabra not in tweet_tokenizado:
                 tweet_tokenizado.append(palabra)
             continue
 
         for inicio in range(len(palabra)):
 
-            for fin in range(inicio + 3, len(palabra) + 1):
+            for fin in range(inicio + LEN_TOKENIZACION, len(palabra) + 1):
                 segmento = palabra[inicio:fin]
 
                 # para cada caracter en una palabra, almacena tokens desde su posicion
@@ -187,48 +178,44 @@ def tokenizar(tweet_normalizado):
 
 # -----------------------------------------------------------------------------
 
-"""
-Buscar tweet:
-Pide input al usuario, lo normaliza y lo tokeniza.
-Si la busqueda se puede hacer (es decir, el input es valido) imprime tweets
-originales que coiciden o NO_ENCONTRADOS si no hay coicidencias.
-Devuelve lista de ids que coiciden con la busqueda.
-"""
-
 
 def buscar_tweet(tweets, tweets_normalizados_tokenizados):
+    """
+    Pide input al usuario, lo normaliza y lo tokeniza.
+    Si la busqueda se puede hacer (es decir, el input es valido) imprime tweets
+    originales que coiciden o NO_ENCONTRADOS si no hay coicidencias.
+    Devuelve lista de ids que coiciden con la busqueda.
+    """
+
     while True:
-        texto_a_buscar = input("Ingrese la/s palabra/s clave a buscar:\n>>> ")
+        texto_a_buscar = input(INGRESE_BUSQUEDA)
 
         if texto_a_buscar == ATRAS:
-            return None
+            return []
 
-        ids_comunes = obtener_ids_tweets_coincidentes(
-            texto_a_buscar, tweets_normalizados_tokenizados
-        )
-
-        if ids_comunes is None:
+        busqueda_normalizada = normalizar(texto_a_buscar)
+        if busqueda_normalizada == "":
             print(INPUT_INVALIDO)
             continue
+
+        ids_comunes = obtener_ids_tweets_coincidentes(
+            busqueda_normalizada, tweets_normalizados_tokenizados
+        )
 
         if not ids_comunes:
             print(NO_ENCONTRADOS)
             return []
 
         print(RESULTADOS_BUSQUEDA)
-
-        # se imprimen resultados ordenados
-        for id in sorted(ids_comunes):
+        for id in sorted(ids_comunes):  # se imprimen resultados ordenados
             print(f"{id}. {tweets[id]}")
 
         return ids_comunes
 
 
-def obtener_ids_tweets_coincidentes(texto_a_buscar, tweets_normalizados_tokenizados):
-    busqueda_normalizada = normalizar(texto_a_buscar)
-    if busqueda_normalizada == "":
-        return None
-
+def obtener_ids_tweets_coincidentes(
+    busqueda_normalizada, tweets_normalizados_tokenizados
+):
     busqueda_tokenizada = tokenizar(busqueda_normalizada)
 
     # va a ser una lista de listas donde cada sublista
@@ -238,71 +225,46 @@ def obtener_ids_tweets_coincidentes(texto_a_buscar, tweets_normalizados_tokeniza
     # si no hay coincidencias devolver lista vacia
     # si las hay, almacenar lista de ids asociados a token coincidente
     for token in busqueda_tokenizada:
-        if token not in tweets_normalizados_tokenizados:
+        ids = tweets_normalizados_tokenizados.get(token)
+        if ids is None:
             return []
-
-        listas_de_ids.append(tweets_normalizados_tokenizados[token])
-
-    # si listas_de_ids esta vacia, devolver lista vacia
-    if not listas_de_ids:
-        return []
+        listas_de_ids.append(ids)
 
     # se devuelve una nueva lista donde solo son validos
     # los ids que coiciden con todos los tokens ingresados
-    ids_comunes = listas_de_ids[0]  # 1er sublista sirve de base para la comparacion
-    for lista in listas_de_ids[1:]:
-        nueva_ids_comunes = []
-        for id in ids_comunes:
-            if id in lista:
-                nueva_ids_comunes.append(id)
-        ids_comunes = nueva_ids_comunes
+    ids_comunes = set(listas_de_ids[0])
 
-    return ids_comunes
+    # interseccion entre primer lista y todas las demas
+    for lista in listas_de_ids[1:]:
+        ids_comunes = ids_comunes & set(lista)
+
+    return list(ids_comunes)
 
 
 # -----------------------------------------------------------------------------
 
-"""
-Eliminar Tweets:
-Llama a buscar_tweet() y almacena lista de ids coincidentes con la busqueda
-Pide ids a eliminar y verifica que estos sean validos (es decir, que el input
-sea valido y que los ids ingresados coicidan con el resultado de la busqueda)
-No devuelve nada, solo modifica diccionario
-
-Funciones auxiliares:
-- listar_ids() recibe el input (la lista de ids a eliminar), verifica que la lista de ids
-contenga unicamnete numeros o rangos; a los rangos los separa en numeros y devuelve una
-lista ordenada de ids
-
-- validar_ids_seleccionados() recibe una lista ordenada de ids y verifica que estos
-coicidan con los resultados de busqueda; devuelve True si la lista de ids es valida,
-sino, devuelve False
-
-- eliminar_ids_de_tweets() crea un set para evitar repetir eliminaciones, imprime tweets
-eliminados y llama borrar_id_asociado_a_token() (quien efectivamente borra ids y tokens)
-
-- borrar_id_asociado_a_token() normaliza y tokeniza tweet que coincide con id a eliminar;
-para cada token resultante, si este se encuentra en diccionario, elimina el id de los valores,
-si eso hace que token quede vacio (o sea no le queda ningun id asociado), tambien elimina el token
-"""
-
 
 def eliminar_tweets(tweets, tweets_normalizados_tokenizados):
+    """
+    Llama a buscar_tweet() y almacena lista de ids coincidentes con la busqueda
+    Pide ids a eliminar y verifica que estos sean validos (es decir, que el
+    input sea valido y que los ids ingresados coicidan con el resultado
+    de la busqueda) No devuelve nada, solo modifica diccionario
+    """
+
     while True:
 
         ids_coincidentes = buscar_tweet(tweets, tweets_normalizados_tokenizados)
 
         # si ATRAS (en buscar_tweet) o si no hay resultados de busqueda, vuelve al menu
-        if ids_coincidentes is None or not ids_coincidentes:
-            return None
+        if not ids_coincidentes:
+            return
 
         while True:
-            ids_a_eliminar = input(
-                "Ingrese los numeros de tweets a eliminar:\n>>> "
-            ).split(",")
+            ids_a_eliminar = input(INGRESE_TWEETS_ELIMINAR).split(",")
 
             if ids_a_eliminar[0] == ATRAS:
-                return None
+                return
 
             # se devuelve lista de ids solo si input es valido
             lista_de_ids = listar_ids(ids_a_eliminar)
@@ -313,14 +275,24 @@ def eliminar_tweets(tweets, tweets_normalizados_tokenizados):
 
             lista_de_ids.sort()
 
-            print(TWEETS_ELIMINADOS)
-            eliminar_ids_de_tweets(
+            ids_eliminados = eliminar_ids_de_tweets(
                 lista_de_ids, tweets, tweets_normalizados_tokenizados
             )
-            return None  # no devuelve nada, solo modifica diccionario
+
+            print(TWEETS_ELIMINADOS)
+            for id_eliminado in ids_eliminados:
+                print(f"{id_eliminado}. {tweets[id_eliminado]}")
+
+            return  # no devuelve nada, solo modifica diccionario
 
 
 def listar_ids(ids_a_eliminar):
+    """
+    Recibe el input (la lista de ids a eliminar), verifica que la lista de
+    ids contenga unicamente numeros o rangos; a los rangos los separa en
+    numeros y devuelve una lista ordenada de ids
+    """
+
     lista_ids = []
     error = None
 
@@ -348,7 +320,8 @@ def listar_ids(ids_a_eliminar):
 
             inicio, fin = int(inicio), int(fin)
             if inicio > fin:
-                return INPUT_INVALIDO
+                error = INPUT_INVALIDO
+                break
 
             # almacena un id por cada numero de range(inicio, fin)
             for id in range(inicio, fin + 1):
@@ -358,14 +331,19 @@ def listar_ids(ids_a_eliminar):
             error = INPUT_INVALIDO
             break
 
-    if error:  # si hubo algun error, devolverlo (INPUT_INVALIDO)
-        return error
+    if error:  # si hubo algun error, devolver []
+        return []
     return lista_ids
 
 
 def validar_ids_seleccionados(lista_de_ids, ids_coincidentes):
+    """
+    Recibe una lista ordenada de ids y verifica que estos coicidan con
+    los resultados de busqueda; devuelve True si la lista de ids es valida,
+    sino, devuelve False
+    """
 
-    if lista_de_ids == INPUT_INVALIDO:
+    if lista_de_ids == []:
         print(INPUT_INVALIDO)
         return False
 
@@ -379,7 +357,11 @@ def validar_ids_seleccionados(lista_de_ids, ids_coincidentes):
 
 
 def eliminar_ids_de_tweets(lista_de_ids, tweets, tweets_normalizados_tokenizados):
-
+    """
+    crea un set para evitar repetir eliminaciones, imprime tweets
+    eliminados y llama borrar_id_asociado_a_token() (quien
+    efectivamente borra ids y tokens)
+    """
     eliminados = set()  # para no tratar de eliminar tweets ya eliminados
 
     for id in lista_de_ids:
@@ -388,14 +370,22 @@ def eliminar_ids_de_tweets(lista_de_ids, tweets, tweets_normalizados_tokenizados
         eliminados.add(id)
 
         tweet = tweets[id]
-        print(f"{id}. {tweet}")
 
         # borra todos los ids del tweet asociados a tokens y si el unico id
         # asociado era el eliminado, tambien elimina token
         borrar_id_asociado_a_token(id, tweet, tweets_normalizados_tokenizados)
 
+    return eliminados
+
 
 def borrar_id_asociado_a_token(id, tweet, tweets_normalizados_tokenizados):
+    """
+    Normaliza y tokeniza tweet que coincide con id a eliminar; para cada
+    token resultante, si este se encuentra en diccionario,
+    elimina el id de los valores, si eso hace que token quede vacio
+    (o sea no le queda ningun id asociado) tambien elimina el token
+    """
+
     tweet_normalizado = normalizar(tweet)
 
     for token in tokenizar(tweet_normalizado):
