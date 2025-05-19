@@ -283,7 +283,7 @@ def eliminar_tweets(tweets, tweets_normalizados_tokenizados):
             for id_eliminado in ids_eliminados:
                 print(f"{id_eliminado}. {tweets[id_eliminado]}")
 
-            return  # no devuelve nada, solo modifica diccionario
+            return
 
 
 def listar_ids(ids_a_eliminar):
@@ -358,9 +358,9 @@ def validar_ids_seleccionados(lista_de_ids, ids_coincidentes):
 
 def eliminar_ids_de_tweets(lista_de_ids, tweets, tweets_normalizados_tokenizados):
     """
-    crea un set para evitar repetir eliminaciones, imprime tweets
-    eliminados y llama borrar_id_asociado_a_token() (quien
-    efectivamente borra ids y tokens)
+    Crea un set para evitar repetir eliminaciones, y llama
+    borrar_id_asociado_a_token() (quien efectivamente borra
+    ids y tokens)
     """
     eliminados = set()  # para no tratar de eliminar tweets ya eliminados
 
