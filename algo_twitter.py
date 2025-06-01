@@ -1,16 +1,33 @@
-NUMERO_INVALIDO = "Numero de tweet invalido."
-NO_ENCONTRADOS = "No se encontraron tweets."
-INPUT_INVALIDO = "Input invalido."
-FIN = "Finalizando..."
-RESULTADOS_BUSQUEDA = "Resultados de la busqueda:"
-TWEETS_ELIMINADOS = "Tweets eliminados:"
-ATRAS = "**"
+ERROR_IMPORTACION = "El/los archivos a importar deben existir y ser .txt válidos"
+DIRECCION_ERRONEA = "No se pudo exportar a esa dirección."
+TOKENIZACION_INVALIDA = "El argumento de cantidad de tokens es inválido."
+DB_INVALIDA = "Error al intentar abrir el programa."
 
-MENU = "1. Crear Tweet\n" "2. Buscar Tweet\n" "3. Eliminar Tweet\n" "4. Salir\n" ">>> "
+RESULTADOS_BUSQUEDA = "Resultados de la busqueda:"
+NO_ENCONTRADOS = "No se encontraron tweets."
+TWEETS_ELIMINADOS = "Tweets eliminados:"
+NUMERO_INVALIDO = "Numero de tweet invalido."
+INPUT_INVALIDO = "Input invalido."
+ATRAS = "**"
+FIN = "Finalizando..."
+DB_PATH = "db"
+
+MENU = (
+    "1. Crear Tweet\n"
+    "2. Buscar Tweet\n"
+    "3. Eliminar Tweet\n"
+    "4. Importar Tweet\n"
+    "5. Exportar Tweet\n"
+    "6. Salir\n"
+    ">>> "
+)
+
 CREAR_TWEET = "1"
 BUSCAR_TWEET = "2"
 ELIMINAR_TWEET = "3"
-FINALIZAR = "4"
+IMPORTAR_TWEET = "4"
+EXPORTAR_TWEET = "5"
+FINALIZAR = "6"
 
 INGRESE_TWEET = "Ingrese el tweet a almacenar: "
 INGRESE_BUSQUEDA = "Ingrese la/s palabra/s clave a buscar:\n>>> "
@@ -30,9 +47,6 @@ def main():
         user_input = input(MENU)
 
         if user_input == CREAR_TWEET:
-            # crear_tweet devuelve id+1 (solo si efectivamente se guarda el token)
-            # caso contrario (o sea input == **) devuelve el mismo id
-
             id = crear_tweet(id, tweets, tweets_normalizados_tokenizados)
 
         elif user_input == BUSCAR_TWEET:
@@ -55,8 +69,10 @@ def main():
 def crear_tweet(id, tweets, tweets_normalizados_tokenizados):
     """
     El usuario ingresa un tweet que se almacena con su respectivo id (que es
-    unico e irrepetible); id se recibe como parametro por para poder  tener
-    en cuenta valor pervio del id y sumarle 1.
+    unico e irrepetible); id se recibe como parametro por para poder tener
+    en cuenta valor pervio del id y devolver sumarle 1 id+1 (solo si
+    efectivamente se guarda el token) caso contrario (o sea input == **)
+    devuelve el mismo id.
     """
 
     while True:  # hasta recibir input valido o ATRAS
