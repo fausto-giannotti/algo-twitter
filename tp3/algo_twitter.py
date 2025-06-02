@@ -95,24 +95,42 @@ def crear_tweet(id, tweets, tweets_normalizados_tokenizados, len_tokenizacion):
             print(INPUT_INVALIDO)
             continue
 
-        # dado que tweet es valido, es almacenado en ambos dicts:
+        tweet_tokenizado = tokenizar(tweet_normalizado, len_tokenizacion)
 
-        tweets[id] = tweet_a_almacenar
-
-        for token in tokenizar(tweet_normalizado, len_tokenizacion):
-
-            # si token ya fue almacenado antes, sumarle un nuevo id
-            if token in tweets_normalizados_tokenizados:
-                tweets_normalizados_tokenizados[token].append(id)
-
-            # si token nunca fue almacenado antes,
-            # guardarlo como clave con su respectivo id
-            else:
-                tweets_normalizados_tokenizados[token] = [id]
+        almacenar_tweet(
+            id,
+            tweet_a_almacenar,
+            tweets,
+            tweets_normalizados_tokenizados,
+            tweet_tokenizado,
+        )
 
         print(f"OK {id}")
 
         return id + 1
+
+
+def almacenar_tweet(
+    id,
+    tweet_a_almacenar,
+    tweets,
+    tweets_normalizados_tokenizados,
+    tweet_tokenizado,
+):
+    """Cada tweet es valido es almacenado en ambos dicts"""
+
+    tweets[id] = tweet_a_almacenar
+
+    for token in tweet_tokenizado:
+
+        # si token ya fue almacenado antes, sumarle un nuevo id
+        if token in tweets_normalizados_tokenizados:
+            tweets_normalizados_tokenizados[token].append(id)
+
+        # si token nunca fue almacenado antes,
+        # guardarlo como clave con su respectivo id
+        else:
+            tweets_normalizados_tokenizados[token] = [id]
 
 
 def normalizar(tweet):
