@@ -446,7 +446,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if len(args) == 0:
-        arg = LEN_DEFAULT_TOKENIZACION  # 3
+        main()
+
     else:
         # verifica que el parametro sea valido
         try:
@@ -458,4 +459,4 @@ if __name__ == "__main__":
             print(TOKENIZACION_INVALIDA)
             sys.exit(1)
 
-    main(arg)
+        main(arg)
