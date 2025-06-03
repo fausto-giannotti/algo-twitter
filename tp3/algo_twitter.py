@@ -1,4 +1,4 @@
-# import os
+import os
 import sys
 
 ERROR_IMPORTACION = "El/los archivos a importar deben existir y ser .txt válidos"
@@ -41,11 +41,11 @@ LEN_DEFAULT_TOKENIZACION = 3
 
 def main(arg=LEN_DEFAULT_TOKENIZACION):
 
-    id = 0
+    len_tokenizacion = arg
     tweets = {}
     tweets_normalizados_tokenizados = {}
 
-    len_tokenizacion = arg
+    id = inicializar_db(tweets, tweets_normalizados_tokenizados, len_tokenizacion)
 
     while True:
 
@@ -68,6 +68,94 @@ def main(arg=LEN_DEFAULT_TOKENIZACION):
 
         else:
             print(INPUT_INVALIDO)
+
+
+# -----------------------------------------------------------------------------
+
+
+def validar_db():
+    """Verifica que DB_PATH sea un dir valido. Lo mismo con cada uno de los
+    archivos dentro del dir. No recibe parametros, solo verifica a partir de
+    DB_PATH. Si hay algun error devuelve False, sino True"""
+
+    try:
+        for archivo in os.listdir(DB_PATH):
+
+            if not archivo.endswith(".txt"):
+                return False
+
+            ruta = os.path.join(DB_PATH, archivo)
+
+            with open(ruta, "r", encoding="utf8") as arc:
+                arc.readline()
+
+    except (IOError, OSError, UnicodeDecodeError):
+        return False
+
+    return True
+
+
+def inicializar_db(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
+
+    id_max = 0
+
+    if not validar_db():
+        print(DB_INVALIDA)
+        sys.exit(1)
+
+    # dado que db es valida y todos sus archivos lo son
+
+    lista_archivos = os.listdir(DB_PATH)
+
+    if len(lista_archivos) == 0:
+        return id_max
+
+    for archivo in lista_archivos:
+
+        id = int(archivo.split(".")[0])
+        ruta = os.path.join(DB_PATH, archivo)
+
+        if id_max < id:
+            id_max = id
+
+        with open(ruta, "r", encoding="utf8") as archivo:
+
+            tweet_a_almacenar = archivo.readline()
+
+            if not tweet_a_almacenar:
+                continue
+
+            tweet_tokenizado = tokenizar(tweet_a_almacenar, len_tokenizacion)
+
+            almacenar_tweet(
+                id,
+                tweet_a_almacenar,
+                tweets,
+                tweets_normalizados_tokenizados,
+                tweet_tokenizado,
+            )
+
+    return id_max + 1  # devuleve ultimo id + 1
+
+
+def persistir_tweet(id, tweet):
+    """Recibe un id y un tweet validos y los almacena en un archivo en db
+    con nombre 'id.txt' y contenido el tweet"""
+
+    archivo = f"{id}.txt"
+    ruta = os.path.join(DB_PATH, archivo)
+
+    with open(ruta, "w") as arc:
+        arc.write(tweet)
+
+
+def eliminar_de_db(id):
+
+    archivo = f"{id}.txt"
+    ruta = os.path.join(DB_PATH, archivo)
+
+    with open(ruta, "w", encoding="utf8") as arc:
+        arc.write("")
 
 
 # -----------------------------------------------------------------------------
@@ -96,6 +184,8 @@ def crear_tweet(id, tweets, tweets_normalizados_tokenizados, len_tokenizacion):
             continue
 
         tweet_tokenizado = tokenizar(tweet_normalizado, len_tokenizacion)
+
+        persistir_tweet(id, tweet_a_almacenar)
 
         almacenar_tweet(
             id,
@@ -412,9 +502,12 @@ def eliminar_ids_de_tweets(
     for id in lista_de_ids:
         if id in eliminados:
             continue
+
         eliminados.add(id)
 
         tweet = tweets[id]
+
+        eliminar_de_db(id)
 
         # borra todos los ids del tweet asociados a tokens y si el unico id
         # asociado era el eliminado, tambien elimina token
