@@ -39,12 +39,13 @@ INGRESE_TWEETS_ELIMINAR = "Ingrese los numeros de tweets a eliminar:\n>>> "
 LEN_DEFAULT_TOKENIZACION = 3
 
 
-def main(args=[]):
+def main(args=None):
 
-    len_tokenizacion = LEN_DEFAULT_TOKENIZACION
+    len_tokenizacion = validar_argumentos(args)
 
-    if len(args) == 1:
-        len_tokenizacion = int(args[0])
+    if len_tokenizacion is None:
+        print(TOKENIZACION_INVALIDA)
+        sys.exit(1)
 
     tweets = {}
     tweets_normalizados_tokenizados = {}
@@ -550,20 +551,29 @@ def borrar_id_asociado_a_token(
 
 
 def validar_argumentos(args):
-    if len(args) > 1:  # verifica que se haya pasado 1 parametro
-        print(TOKENIZACION_INVALIDA)
-        sys.exit(1)
+    """
+    Si se ingresan argumentos por consola los recibe por args, sino,
+    recibe args = None. Si args = None o solo se recibe 1 argumento
+    (i.e. args = ["nombre_archivo"]), devuelve LEN_DEFAULT_TOKENIZACION.
 
-    if len(args) == 1:
-        # verifica que el parametro sea valido
-        try:
-            valor = int(args[0])
-            if valor < 0:
-                raise ValueError
+    Si efectivamente se reciben mas argumentos, verifica que sea solo un
+    entero positivo. Si lo es, se devuelve como int (que en main() se
+    almacena como len_tokenizacion). Si no, se devuelve None (y en main()
+    se ejecuta sys.exit(1)).
+    """
 
-        except ValueError:
-            print(TOKENIZACION_INVALIDA)
-            sys.exit(1)
+    if args is None or len(args) == 1:
+        return LEN_DEFAULT_TOKENIZACION
+
+    if len(args) != 2 or not args[1].isdigit():
+        return None
+
+    valor = int(args[1])
+
+    if valor <= 0:
+        return None
+
+    return valor
 
 
 # -----------------------------------------------------------------------------
@@ -574,7 +584,7 @@ def validar_argumentos(args):
 
 if __name__ == "__main__":
 
-    args = sys.argv[1:]
-    validar_argumentos(args)
+    # args = sys.argv[1:]
+    # validar_argumentos(args)
 
-    main(args)
+    main(sys.argv)
