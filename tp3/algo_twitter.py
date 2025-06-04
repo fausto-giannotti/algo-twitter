@@ -39,9 +39,13 @@ INGRESE_TWEETS_ELIMINAR = "Ingrese los numeros de tweets a eliminar:\n>>> "
 LEN_DEFAULT_TOKENIZACION = 3
 
 
-def main(arg=LEN_DEFAULT_TOKENIZACION):
+def main(args=[]):
 
-    len_tokenizacion = arg
+    len_tokenizacion = LEN_DEFAULT_TOKENIZACION
+
+    if len(args) == 1:
+        len_tokenizacion = int(args[0])
+
     tweets = {}
     tweets_normalizados_tokenizados = {}
 
@@ -544,30 +548,33 @@ def borrar_id_asociado_a_token(
 
 # -----------------------------------------------------------------------------
 
-# Esta parte del código se ejecuta al final, asegurando que se ejecute el programa
-# mediante la terminal correctamente y permitiendo que se puedan realizar
-# los tests de forma automática y aislada.
 
-if __name__ == "__main__":
-
-    args = sys.argv[1:]  # ignora nombre del archivo
-
+def validar_argumentos(args):
     if len(args) > 1:  # verifica que se haya pasado 1 parametro
         print(TOKENIZACION_INVALIDA)
         sys.exit(1)
 
-    if len(args) == 0:
-        main()
-
-    else:
+    if len(args) == 1:
         # verifica que el parametro sea valido
         try:
-            arg = int(args[0])
-            if arg < 1:
+            valor = int(args[0])
+            if valor < 0:
                 raise ValueError
 
         except ValueError:
             print(TOKENIZACION_INVALIDA)
             sys.exit(1)
 
-        main(arg)
+
+# -----------------------------------------------------------------------------
+
+# Esta parte del código se ejecuta al final, asegurando que se ejecute el programa
+# mediante la terminal correctamente y permitiendo que se puedan realizar
+# los tests de forma automática y aislada.
+
+if __name__ == "__main__":
+
+    args = sys.argv[1:]
+    validar_argumentos(args)
+
+    main(args)
