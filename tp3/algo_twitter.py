@@ -35,6 +35,8 @@ FINALIZAR = "6"
 INGRESE_TWEET = "Ingrese el tweet a almacenar: "
 INGRESE_BUSQUEDA = "Ingrese la/s palabra/s clave a buscar:\n>>> "
 INGRESE_TWEETS_ELIMINAR = "Ingrese los numeros de tweets a eliminar:\n>>> "
+INGRESE_RUTA_IMPORTAR = "Ingrese la/s ruta/s de donde importar:\n"
+INGRESE_RUTA_EXPORTAR = "Ingrese el archivo donde exportar:\n"
 
 LEN_DEFAULT_TOKENIZACION = 3
 
@@ -66,6 +68,11 @@ def main(args=None):
 
         elif user_input == ELIMINAR_TWEET:
             eliminar_tweets(tweets, tweets_normalizados_tokenizados, len_tokenizacion)
+
+        elif user_input == IMPORTAR_TWEET:
+            id = importar_tweets(
+                id, tweets, tweets_normalizados_tokenizados, len_tokenizacion
+            )
 
         elif user_input == FINALIZAR:
             print(FIN)
@@ -545,6 +552,159 @@ def borrar_id_asociado_a_token(
             # queda vacio, borrar tambien el token
             if not tweets_normalizados_tokenizados[token]:
                 del tweets_normalizados_tokenizados[token]
+
+
+# -----------------------------------------------------------------------------
+
+
+def importar_tweets(id, tweets, tweets_normalizados_tokenizados, len_tokenizacion):
+    while True:
+
+        numero_tweets_almacenados = 0
+
+        rutas = input(INGRESE_RUTA_IMPORTAR)
+        if rutas == ATRAS:
+            return id
+
+        rutas_separadas = validar_rutas(rutas)
+
+        if not rutas_separadas:
+            print(ERROR_IMPORTACION)
+            continue
+
+        hay_archivos, archivos_validos_txt = validar_archivos_txt(rutas_separadas)
+        hay_dirs, archivos_validos_de_dir = validar_archivos_en_dirs(rutas_separadas)
+
+        archivos_validos = archivos_validos_txt + archivos_validos_de_dir
+
+        if hay_archivos and not archivos_validos_txt:
+            print(ERROR_IMPORTACION)
+            continue
+
+        if not archivos_validos and hay_dirs:
+            break
+
+        for archivo in archivos_validos:
+            with open(archivo, "r") as archivo_tweets:
+                for tweet in archivo_tweets:
+                    tweet_normalizado = normalizar(tweet)
+                    if tweet_normalizado == "":
+                        continue
+                    tweet_tokenizado = tokenizar(tweet_normalizado, len_tokenizacion)
+
+                    almacenar_tweet(
+                        id,
+                        tweet,
+                        tweets,
+                        tweets_normalizados_tokenizados,
+                        tweet_tokenizado,
+                    )
+                    persistir_tweet(id, tweet)
+                    id += 1
+                    numero_tweets_almacenados += 1
+        break
+
+    print(f"OK {numero_tweets_almacenados}")
+    return id
+
+
+def validar_rutas(rutas):
+    """Verifica que se ingresen archivo/s y/o ruta/s validas.
+    Devuelve una lista vacia si alguna es invalida y una lista
+    de rutas si todas son validas"""
+
+    if rutas.strip() == "":
+        return []
+
+    rutas_separadas = rutas.split(" ")
+
+    for archivo_o_dir in rutas_separadas:
+        if not os.path.exists(archivo_o_dir):
+            return []
+
+    return rutas_separadas
+
+
+def fromato_de_entrada(rutas_separadas):
+    archivo = False
+    directorio = False
+
+    for entrada in rutas_separadas:
+        if os.path.isdir(entrada):
+            directorio = True
+        elif not os.path.isdir(entrada):
+            archivo = True
+
+    return archivo, directorio
+
+
+def validar_archivos_en_dirs(rutas_separadas):
+    hay_dirs = False
+    archivos_validos_dirs = []
+    for ruta in rutas_separadas:
+        if os.path.isdir(ruta):
+            hay_dirs = True
+            lista_archivos_de_dir = listar_archivos(ruta)
+            for archivo in lista_archivos_de_dir:
+                if es_txt(archivo) and archivo_valido(archivo):
+                    archivos_validos_dirs.append(archivo)
+
+    return hay_dirs, archivos_validos_dirs
+
+
+def validar_archivos_txt(rutas_separadas):
+    hay_archivos = False
+    archivos_validos_txt = []
+    for ruta in rutas_separadas:
+        if not os.path.isdir(ruta):
+            hay_archivos = True
+            if es_txt(ruta) and archivo_valido(ruta):
+                archivos_validos_txt.append(ruta)
+            else:
+                archivos_validos_txt = []
+                break
+    return hay_archivos, archivos_validos_txt
+
+
+def listar_archivos(ruta):
+    archivos = []
+
+    for nombre in os.listdir(ruta):
+        ruta_total = os.path.join(ruta, nombre)
+
+        if os.path.isdir(ruta_total):
+            archivos += listar_archivos(ruta_total)
+        else:
+            if not es_txt(ruta_total):
+                continue
+            archivos.append(ruta_total)
+
+    return archivos
+
+
+def archivo_valido(archivo):
+    try:
+        with open(archivo, "r"):
+            pass
+    except (IOError, OSError, UnicodeDecodeError):
+        return False
+
+    return True
+
+
+def es_txt(archivo):
+    return archivo.lower().endswith(".txt")
+
+
+# def listar_tweets(archivo):
+#
+#    lista_tweets = []
+#
+#    with open(archivo, "r") as archivo_de_tweets:
+#        for tweet in archivo_de_tweets:
+#            lista_tweets.append(tweet)
+#
+#    return lista_tweets
 
 
 # -----------------------------------------------------------------------------
