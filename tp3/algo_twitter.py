@@ -74,6 +74,9 @@ def main(args=None):
                 id, tweets, tweets_normalizados_tokenizados, len_tokenizacion
             )
 
+        elif user_input == EXPORTAR_TWEET:
+            exportar_tweets(tweets)
+
         elif user_input == FINALIZAR:
             print(FIN)
             break
@@ -87,33 +90,29 @@ def main(args=None):
 
 def validar_db():
     """Verifica que DB_PATH sea un dir valido. Lo mismo con cada uno de los
-    archivos dentro del dir. No recibe parametros, solo verifica a partir de
-    DB_PATH. Si hay algun error devuelve False, sino True"""
+    archivos dentro del dir. Si hay algun error devuelve => exit(1)"""
 
     try:
         for archivo in os.listdir(DB_PATH):
 
             if not archivo.endswith(".txt"):
-                return False
+                raise IOError
 
             ruta = os.path.join(DB_PATH, archivo)
 
-            with open(ruta, "r", encoding="utf8") as arc:
-                arc.readline()
+            with open(ruta, "r", encoding="utf8"):
+                pass
 
     except (IOError, OSError, UnicodeDecodeError):
-        return False
-
-    return True
+        print(DB_INVALIDA)
+        sys.exit(1)
 
 
 def inicializar_db(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
 
     id_max = 0
 
-    if not validar_db():
-        print(DB_INVALIDA)
-        sys.exit(1)
+    validar_db()
 
     # dado que db es valida y todos sus archivos lo son
 
@@ -133,11 +132,12 @@ def inicializar_db(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
         with open(ruta, "r", encoding="utf8") as archivo:
 
             tweet_a_almacenar = archivo.readline()
+            tweet_normalizado = normalizar(tweet_a_almacenar)
 
             if not tweet_a_almacenar:
                 continue
 
-            tweet_tokenizado = tokenizar(tweet_a_almacenar, len_tokenizacion)
+            tweet_tokenizado = tokenizar(tweet_normalizado, len_tokenizacion)
 
             almacenar_tweet(
                 id,
@@ -154,20 +154,24 @@ def persistir_tweet(id, tweet):
     """Recibe un id y un tweet validos y los almacena en un archivo en db
     con nombre 'id.txt' y contenido el tweet"""
 
-    archivo = f"{id}.txt"
-    ruta = os.path.join(DB_PATH, archivo)
-
-    with open(ruta, "w") as arc:
-        arc.write(tweet)
-
-
-def eliminar_de_db(id):
+    validar_db()
 
     archivo = f"{id}.txt"
     ruta = os.path.join(DB_PATH, archivo)
 
     with open(ruta, "w", encoding="utf8") as arc:
-        arc.write("")
+        arc.write(tweet)
+
+
+def eliminar_de_db(id):
+
+    validar_db()
+
+    archivo = f"{id}.txt"
+    ruta = os.path.join(DB_PATH, archivo)
+
+    with open(ruta, "w", encoding="utf8"):
+        pass
 
 
 # -----------------------------------------------------------------------------
@@ -279,10 +283,10 @@ def normalizar(tweet):
             lista_caracteres[-1] = ""
 
     # convierte la lista en una cadena
-    tweet_normalizado = "".join(lista_caracteres)
+    tweet_normalizado = "".join(lista_caracteres).strip()
 
     # si solo tiene espacios devuelve una cadena vacia
-    if tweet_normalizado.strip() == "":
+    if tweet_normalizado == "":
         return ""
 
     return tweet_normalizado
@@ -427,6 +431,7 @@ def eliminar_tweets(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
             print(TWEETS_ELIMINADOS)
             for id_eliminado in ids_eliminados:
                 print(f"{id_eliminado}. {tweets[id_eliminado]}")
+                del tweets[id_eliminado]
 
             return
 
@@ -524,14 +529,14 @@ def eliminar_ids_de_tweets(
         # borra todos los ids del tweet asociados a tokens y si el unico id
         # asociado era el eliminado, tambien elimina token
         borrar_id_asociado_a_token(
-            id, tweet, tweets_normalizados_tokenizados, len_tokenizacion
+            id, tweet, tweets, tweets_normalizados_tokenizados, len_tokenizacion
         )
 
     return eliminados
 
 
 def borrar_id_asociado_a_token(
-    id, tweet, tweets_normalizados_tokenizados, len_tokenizacion
+    id, tweet, tweets, tweets_normalizados_tokenizados, len_tokenizacion
 ):
     """
     Normaliza y tokeniza tweet que coincide con id a eliminar; para cada
@@ -585,8 +590,9 @@ def importar_tweets(id, tweets, tweets_normalizados_tokenizados, len_tokenizacio
             break
 
         for archivo in archivos_validos:
-            with open(archivo, "r") as archivo_tweets:
+            with open(archivo, "r", encoding="utf8") as archivo_tweets:
                 for tweet in archivo_tweets:
+                    tweet = tweet.rstrip()
                     tweet_normalizado = normalizar(tweet)
                     if tweet_normalizado == "":
                         continue
@@ -625,17 +631,17 @@ def validar_rutas(rutas):
     return rutas_separadas
 
 
-def fromato_de_entrada(rutas_separadas):
-    archivo = False
-    directorio = False
-
-    for entrada in rutas_separadas:
-        if os.path.isdir(entrada):
-            directorio = True
-        elif not os.path.isdir(entrada):
-            archivo = True
-
-    return archivo, directorio
+# def fromato_de_entrada(rutas_separadas):
+#    archivo = False
+#    directorio = False
+#
+#    for entrada in rutas_separadas:
+#        if os.path.isdir(entrada):
+#            directorio = True
+#        elif not os.path.isdir(entrada):
+#            archivo = True
+#
+#    return archivo, directorio
 
 
 def validar_archivos_en_dirs(rutas_separadas):
@@ -710,6 +716,43 @@ def es_txt(archivo):
 # -----------------------------------------------------------------------------
 
 
+def exportar_tweets(tweets):
+
+    while True:
+
+        ruta = input(INGRESE_RUTA_EXPORTAR)
+
+        if ruta == ATRAS:
+            break
+
+        if not es_txt(ruta):
+            print(DIRECCION_ERRONEA)
+            continue
+
+        partes_ruta = ruta.rsplit("/", 1)
+
+        if len(partes_ruta) > 1:
+            dir = partes_ruta[0]
+
+            if not os.path.exists(dir) or not os.path.isdir(dir):
+                print(DIRECCION_ERRONEA)
+                continue
+
+        tweets_exportados = 0
+
+        with open(ruta, "w", encoding="utf-8") as archivo:
+            for tweet in tweets.values():
+                tweet = tweet.rstrip()
+                archivo.write(f"{tweet}\n")
+                tweets_exportados += 1
+
+        print(f"OK {tweets_exportados}")
+        break
+
+
+# -----------------------------------------------------------------------------
+
+
 def validar_argumentos(args):
     """
     Si se ingresan argumentos por consola los recibe por args, sino,
@@ -743,8 +786,5 @@ def validar_argumentos(args):
 # los tests de forma automática y aislada.
 
 if __name__ == "__main__":
-
-    # args = sys.argv[1:]
-    # validar_argumentos(args)
 
     main(sys.argv)
