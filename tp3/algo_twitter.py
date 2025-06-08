@@ -90,7 +90,7 @@ def main(args=None):
 
 def validar_db():
     """Verifica que DB_PATH sea un dir valido. Lo mismo con cada uno de los
-    archivos dentro del dir. Si hay algun error devuelve => exit(1)"""
+    archivos dentro del dir. Si hay algun error => exit(1)"""
 
     try:
         for archivo in os.listdir(DB_PATH):
@@ -109,6 +109,10 @@ def validar_db():
 
 
 def inicializar_db(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
+    """Llama a validar_db para verificar que sea valida. Si hay tweets en la db
+    los almacena en los dicts que recibe por parametros. Los archivos vacios
+    (i.e. de tweets borrados) son ingorados. Devuelve el ultimo id de la
+    db + 1 si hay tweets, caso contrario devuelve id = 0."""
 
     id_max = 0
 
@@ -164,6 +168,8 @@ def persistir_tweet(id, tweet):
 
 
 def eliminar_de_db(id):
+    """Es llamado por eliminar_tweets() para vaciar el archivo de la
+    db donde se encuentra el tweet a eliminar."""
 
     validar_db()
 
@@ -179,11 +185,10 @@ def eliminar_de_db(id):
 
 def crear_tweet(id, tweets, tweets_normalizados_tokenizados, len_tokenizacion):
     """
-    El usuario ingresa un tweet que se almacena con su respectivo id (que es
-    unico e irrepetible); id se recibe como parametro por para poder tener
-    en cuenta valor pervio del id y devolver sumarle 1 id+1 (solo si
-    efectivamente se guarda el token) caso contrario (o sea input == **)
-    devuelve el mismo id.
+    El usuario ingresa un tweet que se almacena con su respectivo id;
+    id se recibe como parametro para poder tener en cuenta valor
+    pervio del id y devolver id+1 (solo si efectivamente se guarda el
+    token) caso contrario (o sea input == **) devuelve el mismo id.
     """
 
     while True:  # hasta recibir input valido o ATRAS
@@ -223,7 +228,9 @@ def almacenar_tweet(
     tweets_normalizados_tokenizados,
     tweet_tokenizado,
 ):
-    """Cada tweet es valido es almacenado en ambos dicts"""
+    """Recibe las 2 versiones del tweet (normalizado-tokenizado por
+    un lado, y sin modificar por el otro) con su respectivo id y los dos dicts.
+    Los almacena en ambos"""
 
     tweets[id] = tweet_a_almacenar
 
@@ -293,6 +300,14 @@ def normalizar(tweet):
 
 
 def tokenizar(tweet_normalizado, len_tokenizacion):
+    """Tokeniza el tweet_normalizado con la longitud dada por el parametro.
+    Si la longitud palabra es menor a len_tokenizacion, se almacena directo.
+    Caso contrario para cada caracter en una palabra, almacena tokens desde
+    su posicion hasta su posicion +len_tokenizacion, +(len_tokenizacion+1),
+    ..., +(len_tokenizacion+n) hasta llegar al final de la palabra.
+    si inicio + len_tokenizacion (o sea fin) >= len(palabra) + 1 --> range()
+    crea rango vacio, por lo tanto no se almacenan tokens con
+    len < len_tokenizacion"""
 
     tweet_tokenizado = []
 
@@ -300,7 +315,6 @@ def tokenizar(tweet_normalizado, len_tokenizacion):
 
     for palabra in lista_de_palabras:
 
-        # si longitud palabra menor que LEN_TOKENIZACION (= 3), se almacena directo
         if len(palabra) < len_tokenizacion:
             if palabra not in tweet_tokenizado:
                 tweet_tokenizado.append(palabra)
@@ -311,12 +325,6 @@ def tokenizar(tweet_normalizado, len_tokenizacion):
             for fin in range(inicio + len_tokenizacion, len(palabra) + 1):
                 segmento = palabra[inicio:fin]
 
-                # para cada caracter en una palabra, almacena tokens desde su posicion
-                # hasta su posicion +3, +4, ..., +n hasta llegar al final de la palabra
-                # si inicio + 3 (o sea fin) >= len(palabra) + 1 --> range() crea rango
-                # vacio, por lo tanto no se almacenan tokens con len < 3
-
-                # no volver a almacenar segmentos ya almacenados
                 if segmento not in tweet_tokenizado:
                     tweet_tokenizado.append(segmento)
 
@@ -328,10 +336,10 @@ def tokenizar(tweet_normalizado, len_tokenizacion):
 
 def buscar_tweet(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
     """
-    Pide input al usuario, lo normaliza y lo tokeniza.
-    Si la busqueda se puede hacer (es decir, el input es valido) imprime tweets
-    originales que coiciden o NO_ENCONTRADOS si no hay coicidencias.
-    Devuelve lista de ids que coiciden con la busqueda.
+    Pide input al usuario, lo normaliza y lo tokeniza. Si la busqueda se
+    puede hacer (es decir, el input es valido) imprime tweets originales
+    que coiciden o NO_ENCONTRADOS si no hay coicidencias. Devuelve
+    lista de ids que coiciden con la busqueda.
     """
 
     while True:
@@ -363,25 +371,22 @@ def buscar_tweet(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
 def obtener_ids_tweets_coincidentes(
     busqueda_normalizada, tweets_normalizados_tokenizados, len_tokenizacion
 ):
+    """Recibe la busqueda normalizada y la tokeniza. Para cada token de la busqueda
+    almacena (si los hay) en una sublista los ids que coinciden. Finalmente, compara
+    las sublistas y devuelve una lista donde solo estan los ids que coiciden con todos
+    los tokens"""
     busqueda_tokenizada = tokenizar(busqueda_normalizada, len_tokenizacion)
 
-    # va a ser una lista de listas donde cada sublista
-    # contiene a los ids asociados a cada token
     listas_de_ids = []
 
-    # si no hay coincidencias devolver lista vacia
-    # si las hay, almacenar lista de ids asociados a token coincidente
     for token in busqueda_tokenizada:
         ids = tweets_normalizados_tokenizados.get(token)
         if ids is None:
             return []
         listas_de_ids.append(ids)
 
-    # se devuelve una nueva lista donde solo son validos
-    # los ids que coiciden con todos los tokens ingresados
     ids_comunes = set(listas_de_ids[0])
 
-    # interseccion entre primer lista y todas las demas
     for lista in listas_de_ids[1:]:
         ids_comunes = ids_comunes & set(lista)
 
@@ -393,10 +398,10 @@ def obtener_ids_tweets_coincidentes(
 
 def eliminar_tweets(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
     """
-    Llama a buscar_tweet() y almacena lista de ids coincidentes con la busqueda
+    Llama a buscar_tweet() y almacena lista de ids coincidentes con la busqueda.
     Pide ids a eliminar y verifica que estos sean validos (es decir, que el
     input sea valido y que los ids ingresados coicidan con el resultado
-    de la busqueda) No devuelve nada, solo modifica diccionario
+    de la busqueda) No devuelve nada, solo modifica los diccionarios.
     """
 
     while True:
@@ -510,11 +515,11 @@ def eliminar_ids_de_tweets(
     lista_de_ids, tweets, tweets_normalizados_tokenizados, len_tokenizacion
 ):
     """
-    Crea un set para evitar repetir eliminaciones, y llama
+    Crea un set para evitar repetir eliminaciones, y llama a
     borrar_id_asociado_a_token() (quien efectivamente borra
     ids y tokens)
     """
-    eliminados = set()  # para no tratar de eliminar tweets ya eliminados
+    eliminados = set()
 
     for id in lista_de_ids:
         if id in eliminados:
@@ -529,14 +534,14 @@ def eliminar_ids_de_tweets(
         # borra todos los ids del tweet asociados a tokens y si el unico id
         # asociado era el eliminado, tambien elimina token
         borrar_id_asociado_a_token(
-            id, tweet, tweets, tweets_normalizados_tokenizados, len_tokenizacion
+            id, tweet, tweets_normalizados_tokenizados, len_tokenizacion
         )
 
     return eliminados
 
 
 def borrar_id_asociado_a_token(
-    id, tweet, tweets, tweets_normalizados_tokenizados, len_tokenizacion
+    id, tweet, tweets_normalizados_tokenizados, len_tokenizacion
 ):
     """
     Normaliza y tokeniza tweet que coincide con id a eliminar; para cada
@@ -563,6 +568,9 @@ def borrar_id_asociado_a_token(
 
 
 def importar_tweets(id, tweets, tweets_normalizados_tokenizados, len_tokenizacion):
+    """Pide al usuario que ingrese las rutas de donde importar. Las valida y lee linea
+    por linea cada tweet mientras los va almacenado en los dicts y guardando en la db.
+    Devuelve el utlimo id almacenado + 1"""
     while True:
 
         numero_tweets_almacenados = 0
@@ -631,20 +639,13 @@ def validar_rutas(rutas):
     return rutas_separadas
 
 
-# def fromato_de_entrada(rutas_separadas):
-#    archivo = False
-#    directorio = False
-#
-#    for entrada in rutas_separadas:
-#        if os.path.isdir(entrada):
-#            directorio = True
-#        elif not os.path.isdir(entrada):
-#            archivo = True
-#
-#    return archivo, directorio
-
-
 def validar_archivos_en_dirs(rutas_separadas):
+    """Recibe una lista de rutas. Para cada ruta que sea un dir lista todos
+    los archivos en el y guarda en una lista todos aquellos que
+    son .txt validos. Devuelve True si hay al menos un dir, sino, False.
+    Ademas, devuelve una lista con los nombres de los archivos validos, si
+    no hay ninguno que lo sea devuelve una lista vacia"""
+
     hay_dirs = False
     archivos_validos_dirs = []
     for ruta in rutas_separadas:
@@ -659,6 +660,12 @@ def validar_archivos_en_dirs(rutas_separadas):
 
 
 def validar_archivos_txt(rutas_separadas):
+    """Recibe una lista de rutas. Para cada ruta que sea un archivo verifica
+    que sea valido y lo almacena en una lista. Devuelve True si hay al menos
+    un archivo, sino, False. Ademas, devuelve una lista con los nombres de
+    los archivos excepto si hay al menos 1 invalido, ahi devuelve una lista
+    vacia"""
+
     hay_archivos = False
     archivos_validos_txt = []
     for ruta in rutas_separadas:
@@ -673,6 +680,12 @@ def validar_archivos_txt(rutas_separadas):
 
 
 def listar_archivos(ruta):
+    """Recibe un directorio y recorre todas las rutas, almacenando
+    todos los .txt validos e ignorando el resto. Si alguna de las rutas
+    en el directorio es otro directorio hace una llamada recursiva y asi
+    sucesivamente hasta que haya solo archivos (o nada) y va devolviendo
+    los .txt validos.
+    Caso base: no hay ningun directorios/archivos en la ruta actual"""
     archivos = []
 
     for nombre in os.listdir(ruta):
@@ -702,21 +715,13 @@ def es_txt(archivo):
     return archivo.lower().endswith(".txt")
 
 
-# def listar_tweets(archivo):
-#
-#    lista_tweets = []
-#
-#    with open(archivo, "r") as archivo_de_tweets:
-#        for tweet in archivo_de_tweets:
-#            lista_tweets.append(tweet)
-#
-#    return lista_tweets
-
-
 # -----------------------------------------------------------------------------
 
 
 def exportar_tweets(tweets):
+    """Pide la ruta de una archivo. Si la ruta esta en un dir, verifica que el
+    dir existe. Crea o sobrescribe el archivo dado por la ruta con los tweets
+    almacenados en memoria (el dict 'tweets')"""
 
     while True:
 
