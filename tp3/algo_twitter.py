@@ -45,9 +45,9 @@ def main(args=None):
 
     len_tokenizacion = validar_argumentos(args)
 
-    if len_tokenizacion is None:
-        print(TOKENIZACION_INVALIDA)
-        sys.exit(1)
+    # if len_tokenizacion is None:
+    #    print(TOKENIZACION_INVALIDA)
+    #    sys.exit(1)
 
     tweets = {}
     tweets_normalizados_tokenizados = {}
@@ -663,46 +663,6 @@ def validar_archivos(rutas_separadas):
     return archivos_validos
 
 
-# def validar_archivos_en_dirs(rutas_separadas):
-#    """Recibe una lista de rutas. Para cada ruta que sea un dir lista todos
-#    los archivos en el y guarda en una lista todos aquellos que
-#    son .txt validos. Devuelve True si hay al menos un dir, sino, False.
-#    Ademas, devuelve una lista con los nombres de los archivos validos, si
-#    no hay ninguno que lo sea devuelve una lista vacia"""
-#
-#    hay_dirs = False
-#    archivos_validos_dirs = []
-#    for ruta in rutas_separadas:
-#        if os.path.isdir(ruta):
-#            hay_dirs = True
-#            lista_archivos_de_dir = listar_archivos(ruta)
-#            for archivo in lista_archivos_de_dir:
-#                if es_txt(archivo) and archivo_valido(archivo):
-#                    archivos_validos_dirs.append(archivo)
-#
-#    return hay_dirs, archivos_validos_dirs
-
-
-# def validar_archivos_txt(rutas_separadas):
-#    """Recibe una lista de rutas. Para cada ruta que sea un archivo verifica
-#    que sea valido y lo almacena en una lista. Devuelve True si hay al menos
-#    un archivo, sino, False. Ademas, devuelve una lista con los nombres de
-#    los archivos excepto si hay al menos 1 invalido, ahi devuelve una lista
-#    vacia"""
-#
-#    hay_archivos = False
-#    archivos_validos_txt = []
-#    for ruta in rutas_separadas:
-#        if not os.path.isdir(ruta):
-#            hay_archivos = True
-#            if es_txt(ruta) and archivo_valido(ruta):
-#                archivos_validos_txt.append(ruta)
-#            else:
-#                archivos_validos_txt = []
-#                break
-#    return hay_archivos, archivos_validos_txt
-
-
 def listar_archivos(ruta):
     """Recibe un directorio y recorre todas las rutas, almacenando
     todos los .txt validos e ignorando el resto. Si alguna de las rutas
@@ -790,20 +750,21 @@ def validar_argumentos(args):
 
     Si efectivamente se reciben mas argumentos, verifica que sea solo un
     entero positivo. Si lo es, se devuelve como int (que en main() se
-    almacena como len_tokenizacion). Si no, se devuelve None (y en main()
-    se ejecuta sys.exit(1)).
+    almacena como len_tokenizacion). Si no, se ejecuta sys.exit(1)).
     """
 
-    if args is None or len(args) == 1:
+    if args is None or len(args) < 2:
         return LEN_DEFAULT_TOKENIZACION
 
     if len(args) != 2 or not args[1].isdigit():
-        return None
+        print(TOKENIZACION_INVALIDA)
+        sys.exit(1)
 
     valor = int(args[1])
 
     if valor <= 0:
-        return None
+        print(TOKENIZACION_INVALIDA)
+        sys.exit(1)
 
     return valor
 
