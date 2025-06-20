@@ -585,16 +585,13 @@ def importar_tweets(id, tweets, tweets_normalizados_tokenizados, len_tokenizacio
             print(ERROR_IMPORTACION)
             continue
 
-        hay_archivos, archivos_validos_txt = validar_archivos_txt(rutas_separadas)
-        hay_dirs, archivos_validos_de_dir = validar_archivos_en_dirs(rutas_separadas)
+        archivos_validos = validar_archivos(rutas_separadas)
 
-        archivos_validos = archivos_validos_txt + archivos_validos_de_dir
-
-        if hay_archivos and not archivos_validos_txt:
+        if not archivos_validos and rutas_directas_a_archivos(rutas_separadas):
             print(ERROR_IMPORTACION)
             continue
 
-        if not archivos_validos and hay_dirs:
+        if not archivos_validos:
             break
 
         for archivo in archivos_validos:
@@ -639,44 +636,71 @@ def validar_rutas(rutas):
     return rutas_separadas
 
 
-def validar_archivos_en_dirs(rutas_separadas):
-    """Recibe una lista de rutas. Para cada ruta que sea un dir lista todos
-    los archivos en el y guarda en una lista todos aquellos que
-    son .txt validos. Devuelve True si hay al menos un dir, sino, False.
-    Ademas, devuelve una lista con los nombres de los archivos validos, si
-    no hay ninguno que lo sea devuelve una lista vacia"""
+def rutas_directas_a_archivos(rutas_separadas):
+    for ruta in rutas_separadas:
+        if not os.path.isdir(ruta):
+            return True
 
-    hay_dirs = False
-    archivos_validos_dirs = []
+    return False
+
+
+def validar_archivos(rutas_separadas):
+    archivos_validos = []
+
     for ruta in rutas_separadas:
         if os.path.isdir(ruta):
-            hay_dirs = True
             lista_archivos_de_dir = listar_archivos(ruta)
             for archivo in lista_archivos_de_dir:
                 if es_txt(archivo) and archivo_valido(archivo):
-                    archivos_validos_dirs.append(archivo)
+                    archivos_validos.append(archivo)
 
-    return hay_dirs, archivos_validos_dirs
-
-
-def validar_archivos_txt(rutas_separadas):
-    """Recibe una lista de rutas. Para cada ruta que sea un archivo verifica
-    que sea valido y lo almacena en una lista. Devuelve True si hay al menos
-    un archivo, sino, False. Ademas, devuelve una lista con los nombres de
-    los archivos excepto si hay al menos 1 invalido, ahi devuelve una lista
-    vacia"""
-
-    hay_archivos = False
-    archivos_validos_txt = []
-    for ruta in rutas_separadas:
         if not os.path.isdir(ruta):
-            hay_archivos = True
             if es_txt(ruta) and archivo_valido(ruta):
-                archivos_validos_txt.append(ruta)
+                archivos_validos.append(ruta)
             else:
-                archivos_validos_txt = []
-                break
-    return hay_archivos, archivos_validos_txt
+                return []
+
+    return archivos_validos
+
+
+# def validar_archivos_en_dirs(rutas_separadas):
+#    """Recibe una lista de rutas. Para cada ruta que sea un dir lista todos
+#    los archivos en el y guarda en una lista todos aquellos que
+#    son .txt validos. Devuelve True si hay al menos un dir, sino, False.
+#    Ademas, devuelve una lista con los nombres de los archivos validos, si
+#    no hay ninguno que lo sea devuelve una lista vacia"""
+#
+#    hay_dirs = False
+#    archivos_validos_dirs = []
+#    for ruta in rutas_separadas:
+#        if os.path.isdir(ruta):
+#            hay_dirs = True
+#            lista_archivos_de_dir = listar_archivos(ruta)
+#            for archivo in lista_archivos_de_dir:
+#                if es_txt(archivo) and archivo_valido(archivo):
+#                    archivos_validos_dirs.append(archivo)
+#
+#    return hay_dirs, archivos_validos_dirs
+
+
+# def validar_archivos_txt(rutas_separadas):
+#    """Recibe una lista de rutas. Para cada ruta que sea un archivo verifica
+#    que sea valido y lo almacena en una lista. Devuelve True si hay al menos
+#    un archivo, sino, False. Ademas, devuelve una lista con los nombres de
+#    los archivos excepto si hay al menos 1 invalido, ahi devuelve una lista
+#    vacia"""
+#
+#    hay_archivos = False
+#    archivos_validos_txt = []
+#    for ruta in rutas_separadas:
+#        if not os.path.isdir(ruta):
+#            hay_archivos = True
+#            if es_txt(ruta) and archivo_valido(ruta):
+#                archivos_validos_txt.append(ruta)
+#            else:
+#                archivos_validos_txt = []
+#                break
+#    return hay_archivos, archivos_validos_txt
 
 
 def listar_archivos(ruta):
