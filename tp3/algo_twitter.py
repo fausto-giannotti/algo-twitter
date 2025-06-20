@@ -45,14 +45,15 @@ def main(args=None):
 
     len_tokenizacion = validar_argumentos(args)
 
-    # if len_tokenizacion is None:
-    #    print(TOKENIZACION_INVALIDA)
-    #    sys.exit(1)
-
     tweets = {}
     tweets_normalizados_tokenizados = {}
 
     id = inicializar_db(tweets, tweets_normalizados_tokenizados, len_tokenizacion)
+
+    llamar_funciones(len_tokenizacion, tweets, tweets_normalizados_tokenizados, id)
+
+
+def llamar_funciones(len_tokenizacion, tweets, tweets_normalizados_tokenizados, id):
 
     while True:
 
@@ -571,15 +572,16 @@ def importar_tweets(id, tweets, tweets_normalizados_tokenizados, len_tokenizacio
     """Pide al usuario que ingrese las rutas de donde importar. Las valida y lee linea
     por linea cada tweet mientras los va almacenado en los dicts y guardando en la db.
     Devuelve el utlimo id almacenado + 1"""
+
+    numero_tweets_almacenados = 0
+
     while True:
 
-        numero_tweets_almacenados = 0
-
-        rutas = input(INGRESE_RUTA_IMPORTAR)
+        rutas = pedir_rutas_importar()
         if rutas == ATRAS:
             return id
 
-        rutas_separadas = validar_rutas(rutas)
+        rutas_separadas = separar_y_validar_rutas(rutas)
 
         if not rutas_separadas:
             print(ERROR_IMPORTACION)
@@ -590,36 +592,64 @@ def importar_tweets(id, tweets, tweets_normalizados_tokenizados, len_tokenizacio
         if not archivos_validos and rutas_directas_a_archivos(rutas_separadas):
             print(ERROR_IMPORTACION)
             continue
-
-        if not archivos_validos:
-            break
-
-        for archivo in archivos_validos:
-            with open(archivo, "r", encoding="utf8") as archivo_tweets:
-                for tweet in archivo_tweets:
-                    tweet = tweet.rstrip()
-                    tweet_normalizado = normalizar(tweet)
-                    if tweet_normalizado == "":
-                        continue
-                    tweet_tokenizado = tokenizar(tweet_normalizado, len_tokenizacion)
-
-                    almacenar_tweet(
-                        id,
-                        tweet,
-                        tweets,
-                        tweets_normalizados_tokenizados,
-                        tweet_tokenizado,
-                    )
-                    persistir_tweet(id, tweet)
-                    id += 1
-                    numero_tweets_almacenados += 1
         break
+
+    id_inicial = id
+
+    id = recorrer_archivos_tweets_importar(
+        archivos_validos,
+        len_tokenizacion,
+        id,
+        tweets,
+        tweets_normalizados_tokenizados,
+    )
+
+    numero_tweets_almacenados = id - id_inicial
 
     print(f"OK {numero_tweets_almacenados}")
     return id
 
 
-def validar_rutas(rutas):
+def recorrer_archivos_tweets_importar(
+    archivos_validos, len_tokenizacion, id, tweets, tweets_normalizados_tokenizados
+):
+    for archivo in archivos_validos:
+        id = almacenar_y_persitir_tweets_importados(
+            archivo, len_tokenizacion, id, tweets, tweets_normalizados_tokenizados
+        )
+
+    return id
+
+
+def almacenar_y_persitir_tweets_importados(
+    archivo, len_tokenizacion, id, tweets, tweets_normalizados_tokenizados
+):
+    with open(archivo, "r", encoding="utf8") as archivo_tweets:
+        for tweet in archivo_tweets:
+            tweet_normalizado = normalizar(tweet.rstrip())
+            if tweet_normalizado == "":
+                continue
+            tweet_tokenizado = tokenizar(tweet_normalizado, len_tokenizacion)
+
+            almacenar_tweet(
+                id,
+                tweet,
+                tweets,
+                tweets_normalizados_tokenizados,
+                tweet_tokenizado,
+            )
+            persistir_tweet(id, tweet)
+            id += 1
+
+    return id
+
+
+def pedir_rutas_importar():
+    rutas = input(INGRESE_RUTA_IMPORTAR)
+    return rutas
+
+
+def separar_y_validar_rutas(rutas):
     """Verifica que se ingresen archivo/s y/o ruta/s validas.
     Devuelve una lista vacia si alguna es invalida y una lista
     de rutas si todas son validas"""
@@ -709,34 +739,50 @@ def exportar_tweets(tweets):
 
     while True:
 
-        ruta = input(INGRESE_RUTA_EXPORTAR)
+        ruta = pedir_ruta_exportar()
 
         if ruta == ATRAS:
-            break
+            return
 
-        if not es_txt(ruta):
-            print(DIRECCION_ERRONEA)
+        if not validar_ruta_importar(ruta):
             continue
 
-        partes_ruta = ruta.rsplit("/", 1)
-
-        if len(partes_ruta) > 1:
-            dir = partes_ruta[0]
-
-            if not os.path.exists(dir) or not os.path.isdir(dir):
-                print(DIRECCION_ERRONEA)
-                continue
-
-        tweets_exportados = 0
-
-        with open(ruta, "w", encoding="utf-8") as archivo:
-            for tweet in tweets.values():
-                tweet = tweet.rstrip()
-                archivo.write(f"{tweet}\n")
-                tweets_exportados += 1
-
-        print(f"OK {tweets_exportados}")
         break
+
+    tweets_exportados = 0
+
+    with open(ruta, "w", encoding="utf-8") as archivo:
+        for tweet in tweets.values():
+            tweet = tweet.rstrip()
+            archivo.write(f"{tweet}\n")
+            tweets_exportados += 1
+
+    print(f"OK {tweets_exportados}")
+
+    return
+
+
+def pedir_ruta_exportar():
+    ruta = input(INGRESE_RUTA_EXPORTAR)
+    return ruta
+
+
+def validar_ruta_importar(ruta):
+
+    if not es_txt(ruta):
+        print(DIRECCION_ERRONEA)
+        return ""
+
+    partes_ruta = ruta.rsplit("/", 1)
+
+    if len(partes_ruta) > 1:
+        dir = partes_ruta[0]
+
+        if not os.path.exists(dir) or not os.path.isdir(dir):
+            print(DIRECCION_ERRONEA)
+            return ""
+
+    return ruta
 
 
 # -----------------------------------------------------------------------------
