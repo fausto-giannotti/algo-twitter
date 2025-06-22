@@ -59,10 +59,7 @@ def tokenizar(tweet_normalizado, len_tokenizacion):
     Si la longitud palabra es menor a len_tokenizacion, se almacena directo.
     Caso contrario para cada caracter en una palabra, almacena tokens desde
     su posicion hasta su posicion +len_tokenizacion, +(len_tokenizacion+1),
-    ..., +(len_tokenizacion+n) hasta llegar al final de la palabra.
-    si inicio + len_tokenizacion (o sea fin) >= len(palabra) + 1 --> range()
-    crea rango vacio, por lo tanto no se almacenan tokens con
-    len < len_tokenizacion"""
+    ..., +(len_tokenizacion+n) hasta llegar al final de la palabra."""
 
     tweet_tokenizado = []
 
