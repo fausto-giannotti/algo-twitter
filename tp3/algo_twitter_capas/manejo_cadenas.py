@@ -1,3 +1,6 @@
+INPUT_INVALIDO = "Input invalido."
+
+
 def normalizar(tweet):
 
     acentos_y_otros = {
@@ -56,10 +59,7 @@ def tokenizar(tweet_normalizado, len_tokenizacion):
     Si la longitud palabra es menor a len_tokenizacion, se almacena directo.
     Caso contrario para cada caracter en una palabra, almacena tokens desde
     su posicion hasta su posicion +len_tokenizacion, +(len_tokenizacion+1),
-    ..., +(len_tokenizacion+n) hasta llegar al final de la palabra.
-    si inicio + len_tokenizacion (o sea fin) >= len(palabra) + 1 --> range()
-    crea rango vacio, por lo tanto no se almacenan tokens con
-    len < len_tokenizacion"""
+    ..., +(len_tokenizacion+n) hasta llegar al final de la palabra."""
 
     tweet_tokenizado = []
 
@@ -81,3 +81,53 @@ def tokenizar(tweet_normalizado, len_tokenizacion):
                     tweet_tokenizado.append(segmento)
 
     return tweet_tokenizado
+
+
+def parsear_ids_ingresados(ids_a_eliminar):
+    """
+    Recibe la lista de ids a eliminar, verifica que la lista de
+    ids contenga unicamente numeros o rangos; a los rangos los separa en
+    numeros y devuelve una lista ordenada de ids
+    """
+
+    lista_ids = []
+    error = None
+
+    for numero_o_rango in ids_a_eliminar:
+        numero_o_rango = numero_o_rango.strip()
+        if not numero_o_rango:  # si elemento de la lista vacio --> input invalido
+            error = INPUT_INVALIDO
+            break
+
+        if numero_o_rango.isdigit():  # si es un unico numero
+            lista_ids.append(int(numero_o_rango))
+            continue
+
+        if "-" in numero_o_rango:  # si es un rango
+            partes = numero_o_rango.split("-")
+            if len(partes) != 2:  # verifica que sea rango con inicio y fin
+                error = INPUT_INVALIDO
+                break
+
+            # verifica que inicio y fin sean numeros
+            inicio, fin = partes[0].strip(), partes[1].strip()
+            if not inicio.isdigit() or not fin.isdigit():
+                error = INPUT_INVALIDO
+                break
+
+            inicio, fin = int(inicio), int(fin)
+            if inicio > fin:
+                error = INPUT_INVALIDO
+                break
+
+            # almacena un id por cada numero de range(inicio, fin)
+            for id in range(inicio, fin + 1):
+                lista_ids.append(id)
+
+        else:  # si se ingresa cualquier cosa que no sea un numero
+            error = INPUT_INVALIDO
+            break
+
+    if error:  # si hubo algun error, devolver []
+        return []
+    return lista_ids
