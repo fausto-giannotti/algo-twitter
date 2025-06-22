@@ -8,9 +8,7 @@ from logica import (
     exportar_tweets,
 )
 
-from manejo_cadenas import normalizar
-
-"""Todo lo relacionado a pedir input y mostrar por pantalla"""
+from manejo_cadenas import normalizar, parsear_ids_ingresados
 
 MENU = (
     "1. Crear Tweet\n"
@@ -47,7 +45,13 @@ DIRECCION_ERRONEA = "No se pudo exportar a esa dirección."
 NUMERO_INVALIDO = "Numero de tweet invalido."
 
 
+# --------------------------------------------------------------------------
+"""Todo lo relacionado a pedir input, validarlo y mostrar por pantalla."""
+# --------------------------------------------------------------------------
+
+
 def llamar_funciones(len_tokenizacion, tweets, tweets_normalizados_tokenizados, id):
+    """Muestra menu, pide input y coordina las llamadas a las funciones."""
 
     while True:
 
@@ -82,9 +86,14 @@ def llamar_funciones(len_tokenizacion, tweets, tweets_normalizados_tokenizados, 
             imprimir_input_invalido()
 
 
+# -------------------------interfaz-guardar--------------------------
+
+
 def pedir_y_guardar_tweet(
     id, tweets, tweets_normalizados_tokenizados, len_tokenizacion
 ):
+    """Llama a pedir_y_validar_tweet() que devuelve un tweet valido
+    y llama a crear_tweet(). Luego imprime el id del tweet creado."""
 
     tweet = pedir_y_validar_tweet()
 
@@ -104,7 +113,37 @@ def pedir_y_guardar_tweet(
     return id
 
 
+def pedir_y_validar_tweet():
+    """Pide al usuario un tweet y lo valida. Si es invalido vuelve
+    a pedir hasta que lo sea excepto en el caso de ATRAS que devuelve
+    None."""
+
+    while True:
+        tweet_a_almacenar = pedir_tweet()
+
+        if tweet_a_almacenar == ATRAS:
+            return None
+
+        tweet_normalizado = normalizar(tweet_a_almacenar)
+
+        if tweet_normalizado == "":
+            imprimir_input_invalido()
+            continue
+        break
+
+    return tweet_a_almacenar
+
+
+# -------------------------interfaz-buscar--------------------------
+
+
 def pedir_busqueda_y_buscar(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
+    """Llama a pedir_y_validar_busqueda() que devuelve una lista
+    vacia si el usuario ingresa ATRAS (y vuelve al menu) o el texto
+    a buscar. Ahi llama a buscar_tweet que devuelve una lista de ids
+    que coinciden. Si no hay coincidencias se imprime NO_ENCONTRADOS
+    y si las hay se imprime cada una de ellas."""
+
     texto_a_buscar = pedir_y_validar_busqueda()
 
     if not texto_a_buscar:
@@ -129,16 +168,44 @@ def pedir_busqueda_y_buscar(tweets, tweets_normalizados_tokenizados, len_tokeniz
     return ids_comunes
 
 
-def buscar_y_eliminar(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
+def pedir_y_validar_busqueda():
+    """Pide una texto a buscar y verifica que sea valida. Si no lo
+    es vuelve a pedir (excepto en el caso de ATRAS). Devuelve el
+    texto a buscar"""
 
-    ids_a_eliminar = pedir_busqueda_y_buscar(
+    while True:
+        texto_a_buscar = pedir_busqueda()
+
+        if texto_a_buscar == ATRAS:
+            return []
+
+        busqueda_normalizada = normalizar(texto_a_buscar)
+        if busqueda_normalizada == "":
+            imprimir_input_invalido()
+            continue
+
+        break
+
+    return texto_a_buscar
+
+
+# -------------------------interfaz-eliminar--------------------------
+
+
+def buscar_y_eliminar(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
+    """Llama a pedir_busqueda_y_buscar() que devuelve una lista de ids. Le
+    pasa la lista a pedir_ids_a_eliminar() que devuelve la lista de ids que
+    el usuario quiere eliminar. Llama a eliminar_tweets() que elimina y
+    devuelve lista de tweets eliminados que son mostrados por pantalla."""
+
+    ids_eliminables = pedir_busqueda_y_buscar(
         tweets, tweets_normalizados_tokenizados, len_tokenizacion
     )
 
-    ids_eliminables = validar_ids_a_eliminar(ids_a_eliminar)
+    ids_a_eliminar = pedir_ids_a_eliminar(ids_eliminables)
 
     lista_tweets_eliminados = eliminar_tweets(
-        ids_eliminables,
+        ids_a_eliminar,
         tweets,
         tweets_normalizados_tokenizados,
         len_tokenizacion,
@@ -152,9 +219,57 @@ def buscar_y_eliminar(tweets, tweets_normalizados_tokenizados, len_tokenizacion)
     return
 
 
+def pedir_ids_a_eliminar(ids_eliminables):
+    """Recibe una lista de ids. Si esta vacia devuelve una lista vacia.
+    Si no, pide al usuario ids a eliminar y los valida. Devuelve una lista
+    de ids a ser eliminados."""
+
+    if not ids_eliminables:
+        return []
+
+    while True:
+        ids_a_eliminar = pedir_tweets_a_eliminar()
+
+        if ids_a_eliminar[0] == ATRAS:
+            return []
+
+        # se devuelve lista de ids solo si input es valido
+        lista_de_ids = parsear_ids_ingresados(ids_a_eliminar)
+
+        # si INPUT_INVALIDO o NO_ENCONTRADO, volver a pedir numeros de tweets a eliminar
+        if not validar_ids_seleccionados(lista_de_ids, ids_eliminables):
+            continue
+
+        return sorted(lista_de_ids)
+
+
+def validar_ids_seleccionados(lista_de_ids, ids_eliminables):
+    """Recibe una lista ordenada de ids y verifica que estos coicidan con
+    los resultados de busqueda; devuelve True si la lista de ids es valida,
+    sino, devuelve False"""
+
+    if lista_de_ids == []:
+        imprimir_input_invalido()
+        return False
+
+    # si la lista de ids no coincide con los resultados de busqueda, entonces error
+    for id in lista_de_ids:
+        if id not in ids_eliminables:
+            imprimir_numero_invalido()
+            return False
+
+    return True
+
+
+# -------------------------interfaz-importar--------------------------
+
+
 def pedir_rutas_e_importar(
     id, tweets, tweets_normalizados_tokenizados, len_tokenizacion
 ):
+    """Llama a pedir_y_validar_rutas() que devuelve rutas validas. Llama a
+    importar_tweets() e imprime el numero de tweets almacenados."""
+
     id_inicial = id
 
     archivos_validos = pedir_y_validar_rutas()
@@ -177,154 +292,9 @@ def pedir_rutas_e_importar(
     return id
 
 
-def pedir_ruta_y_exportar(tweets):
-
-    while True:
-        ruta = pedir_ruta_exportar()
-
-        if ruta == ATRAS:
-            return
-
-        if not validar_ruta_exportar(ruta):
-            continue
-
-        break
-
-    num_tweets_exportados = exportar_tweets(tweets, ruta)
-
-    imprimir_ok_numero(num_tweets_exportados)
-
-
-def pedir_y_validar_tweet():
-
-    while True:
-        tweet_a_almacenar = pedir_tweet()
-
-        if tweet_a_almacenar == ATRAS:
-            return None
-
-        tweet_normalizado = normalizar(tweet_a_almacenar)
-
-        if tweet_normalizado == "":
-            imprimir_input_invalido()
-            continue
-        break
-
-    return tweet_a_almacenar
-
-
-def pedir_y_validar_busqueda():
-
-    while True:
-        texto_a_buscar = pedir_busqueda()
-
-        if texto_a_buscar == ATRAS:
-            return []
-
-        busqueda_normalizada = normalizar(texto_a_buscar)
-        if busqueda_normalizada == "":
-            imprimir_input_invalido()
-            continue
-
-        break
-
-    return busqueda_normalizada
-
-
-def validar_ids_a_eliminar(ids_coincidentes):
-    # si ATRAS (en buscar_tweet) o si no hay resultados de busqueda, vuelve al menu
-
-    if not ids_coincidentes:
-
-        return []
-
-    while True:
-        ids_a_eliminar = pedir_tweets_a_eliminar()
-
-        if ids_a_eliminar[0] == ATRAS:
-            return []
-
-        # se devuelve lista de ids solo si input es valido
-        lista_de_ids = parsear_ids_ingresados(ids_a_eliminar)
-
-        # si INPUT_INVALIDO o NO_ENCONTRADO, volver a pedir numeros de tweets a eliminar
-        if not validar_ids_seleccionados(lista_de_ids, ids_coincidentes):
-            continue
-
-        return sorted(lista_de_ids)
-
-
-def parsear_ids_ingresados(ids_a_eliminar):
-    """
-    Recibe el input (la lista de ids a eliminar), verifica que la lista de
-    ids contenga unicamente numeros o rangos; a los rangos los separa en
-    numeros y devuelve una lista ordenada de ids
-    """
-
-    lista_ids = []
-    error = None
-
-    for numero_o_rango in ids_a_eliminar:
-        numero_o_rango = numero_o_rango.strip()
-        if not numero_o_rango:  # si elemento de la lista vacio --> input invalido
-            error = INPUT_INVALIDO
-            break
-
-        if numero_o_rango.isdigit():  # si es un unico numero
-            lista_ids.append(int(numero_o_rango))
-            continue
-
-        if "-" in numero_o_rango:  # si es un rango
-            partes = numero_o_rango.split("-")
-            if len(partes) != 2:  # verifica que sea rango con inicio y fin
-                error = INPUT_INVALIDO
-                break
-
-            # verifica que inicio y fin sean numeros
-            inicio, fin = partes[0].strip(), partes[1].strip()
-            if not inicio.isdigit() or not fin.isdigit():
-                error = INPUT_INVALIDO
-                break
-
-            inicio, fin = int(inicio), int(fin)
-            if inicio > fin:
-                error = INPUT_INVALIDO
-                break
-
-            # almacena un id por cada numero de range(inicio, fin)
-            for id in range(inicio, fin + 1):
-                lista_ids.append(id)
-
-        else:  # si se ingresa cualquier cosa que no sea un numero
-            error = INPUT_INVALIDO
-            break
-
-    if error:  # si hubo algun error, devolver []
-        return []
-    return lista_ids
-
-
-def validar_ids_seleccionados(lista_de_ids, ids_coincidentes):
-    """
-    Recibe una lista ordenada de ids y verifica que estos coicidan con
-    los resultados de busqueda; devuelve True si la lista de ids es valida,
-    sino, devuelve False
-    """
-
-    if lista_de_ids == []:
-        imprimir_input_invalido()
-        return False
-
-    # si la lista de ids no coincide con los resultados de busqueda, entonces error
-    for id in lista_de_ids:
-        if id not in ids_coincidentes:
-            imprimir_numero_invalido()
-            return False
-
-    return True
-
-
 def pedir_y_validar_rutas():
+    """Pide rutas hasta verificar que sean validas. Devuelve
+    una lista de archivos validos."""
 
     while True:
         rutas = pedir_rutas_importar()
@@ -366,15 +336,11 @@ def separar_y_validar_rutas(rutas):
     return rutas_separadas
 
 
-def rutas_directas_a_archivos(rutas_separadas):
-    for ruta in rutas_separadas:
-        if not os.path.isdir(ruta):
-            return True
-
-    return False
-
-
 def validar_archivos(rutas_separadas):
+    """Para una lista de rutas, valida cada una. Devuelve
+    una lista o None (para diferenciar de archivos invalidos
+    adentro de un dir y archivos invalidos ingresados directamente)."""
+
     archivos_validos = []
 
     for ruta in rutas_separadas:
@@ -399,7 +365,8 @@ def listar_archivos(ruta):
     en el directorio es otro directorio hace una llamada recursiva y asi
     sucesivamente hasta que haya solo archivos (o nada) y va devolviendo
     los .txt validos.
-    Caso base: no hay ningun directorios/archivos en la ruta actual"""
+    Caso base: no hay ningun directorio/archivo en la ruta actual"""
+
     archivos = []
 
     for nombre in os.listdir(ruta):
@@ -429,6 +396,29 @@ def es_txt(archivo):
     return archivo.lower().endswith(".txt")
 
 
+# -------------------------interfaz-exportar--------------------------
+
+
+def pedir_ruta_y_exportar(tweets):
+    """Pide una ruta hasta que sea valida. Llama a exportar_tweets
+    e imprime el numero de tweets exportados"""
+
+    while True:
+        ruta = pedir_ruta_exportar()
+
+        if ruta == ATRAS:
+            return
+
+        if not validar_ruta_exportar(ruta):
+            continue
+
+        break
+
+    num_tweets_exportados = exportar_tweets(ruta, tweets)
+
+    imprimir_ok_numero(num_tweets_exportados)
+
+
 def validar_ruta_exportar(ruta):
 
     if not es_txt(ruta):
@@ -447,11 +437,7 @@ def validar_ruta_exportar(ruta):
     return ruta
 
 
-# ----------------------------------------------------------------
-
-# ----------------------------------------------------------------
-
-"""Pedidos de input"""
+# -------------------------Pedidos-de-input--------------------------
 
 
 def pedir_numero_menu():
@@ -484,9 +470,7 @@ def pedir_ruta_exportar():
     return ruta
 
 
-# ----------------------------------------------------------------
-
-"""Imprimir por pantalla"""
+# -------------------------imprimir-mensajes--------------------------
 
 
 def imprimir_fin():

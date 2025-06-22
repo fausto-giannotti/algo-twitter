@@ -1,8 +1,8 @@
 import sys
 
 from logica import validar_argumentos
-from interaccion_usuario import llamar_funciones
 from manejo_db import inicializar_db
+from interaccion_usuario import llamar_funciones
 
 
 def main(args=None):

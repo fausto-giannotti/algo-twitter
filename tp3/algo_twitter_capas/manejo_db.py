@@ -9,7 +9,7 @@ DB_INVALIDA = "Error al intentar abrir el programa."
 
 def validar_db():
     """Verifica que DB_PATH sea un dir valido. Lo mismo con cada uno de los
-    archivos dentro del dir. Si hay algun error => exit(1)"""
+    archivos dentro del dir. Si hay algun error => sys.exit(1)"""
 
     try:
         for archivo in os.listdir(DB_PATH):
@@ -28,8 +28,8 @@ def validar_db():
 
 
 def inicializar_db(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
-    """Llama a validar_db para verificar que sea valida. Si hay tweets en la db
-    los almacena en los dicts que recibe por parametros. Los archivos vacios
+    """Llama a validar_db() para verificar que sea valida. Si hay tweets en la
+    db los almacena en los dicts que recibe por parametros. Los archivos vacios
     (i.e. de tweets borrados) son ingorados. Devuelve el ultimo id de la
     db + 1 si hay tweets, caso contrario devuelve id = 0."""
 
@@ -108,7 +108,7 @@ def almacenar_tweet(
 ):
     """Recibe las 2 versiones del tweet (normalizado-tokenizado por
     un lado, y sin modificar por el otro) con su respectivo id y los dos dicts.
-    Los almacena en ambos"""
+    Los almacena en ambos."""
 
     tweets[id] = tweet_a_almacenar
 
