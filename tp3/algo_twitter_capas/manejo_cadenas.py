@@ -91,43 +91,43 @@ def parsear_ids_ingresados(ids_a_eliminar):
     """
 
     lista_ids = []
-    error = None
+    error = False
 
     for numero_o_rango in ids_a_eliminar:
         numero_o_rango = numero_o_rango.strip()
-        if not numero_o_rango:  # si elemento de la lista vacio --> input invalido
-            error = INPUT_INVALIDO
+        if not numero_o_rango:  # i.e. elemento de la lista vacio
+            error = True
             break
 
-        if numero_o_rango.isdigit():  # si es un unico numero
+        if numero_o_rango.isdigit():
             lista_ids.append(int(numero_o_rango))
             continue
 
         if "-" in numero_o_rango:  # si es un rango
             partes = numero_o_rango.split("-")
-            if len(partes) != 2:  # verifica que sea rango con inicio y fin
-                error = INPUT_INVALIDO
+            if len(partes) != 2:
+                error = True
                 break
 
-            # verifica que inicio y fin sean numeros
             inicio, fin = partes[0].strip(), partes[1].strip()
             if not inicio.isdigit() or not fin.isdigit():
-                error = INPUT_INVALIDO
+                error = True
                 break
 
             inicio, fin = int(inicio), int(fin)
             if inicio > fin:
-                error = INPUT_INVALIDO
+                error = True
                 break
 
             # almacena un id por cada numero de range(inicio, fin)
             for id in range(inicio, fin + 1):
                 lista_ids.append(id)
 
-        else:  # si se ingresa cualquier cosa que no sea un numero
-            error = INPUT_INVALIDO
+        else:  # si se ingresa cualquier otra cosa
+            error = True
             break
 
-    if error:  # si hubo algun error, devolver []
+    if error:
         return []
+
     return lista_ids

@@ -23,7 +23,7 @@ def validar_db():
                 pass
 
     except (IOError, OSError, UnicodeDecodeError):
-        imprimir_db_invalida()
+        print(DB_INVALIDA)
         sys.exit(1)
 
 
@@ -36,8 +36,6 @@ def inicializar_db(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
     id_max = 0
 
     validar_db()
-
-    # dado que db es valida y todos sus archivos lo son
 
     lista_archivos = os.listdir(DB_PATH)
 
@@ -122,7 +120,3 @@ def almacenar_tweet(
         # guardarlo como clave con su respectivo id
         else:
             tweets_normalizados_tokenizados[token] = [id]
-
-
-def imprimir_db_invalida():
-    print(DB_INVALIDA)
