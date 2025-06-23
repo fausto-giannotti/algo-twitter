@@ -6,6 +6,9 @@ from logica import (
     eliminar_tweets,
     importar_tweets,
     exportar_tweets,
+    separar_y_validar_rutas,
+    validar_archivos,
+    es_txt,
 )
 
 from manejo_cadenas import normalizar, parsear_ids_ingresados
@@ -138,15 +141,15 @@ def pedir_y_validar_tweet():
 
 
 def pedir_busqueda_y_buscar(tweets, tweets_normalizados_tokenizados, len_tokenizacion):
-    """Llama a pedir_y_validar_busqueda() que devuelve una lista
-    vacia si el usuario ingresa ATRAS (y vuelve al menu) o el texto
-    a buscar. Ahi llama a buscar_tweet que devuelve una lista de ids
-    que coinciden. Si no hay coincidencias se imprime NO_ENCONTRADOS
-    y si las hay se imprime cada una de ellas."""
+    """Llama a pedir_y_validar_busqueda() que devuelve None si el
+    usuario ingresa ATRAS (y vuelve al menu) o el texto a buscar.
+    Ahi llama a buscar_tweet que devuelve una lista de ids que coinciden.
+    Si no hay coincidencias se imprime NO_ENCONTRADOS y si las hay se
+    imprime cada una de ellas."""
 
     texto_a_buscar = pedir_y_validar_busqueda()
 
-    if not texto_a_buscar:
+    if texto_a_buscar is None:
         return []
 
     ids_comunes = buscar_tweet(
@@ -170,14 +173,14 @@ def pedir_busqueda_y_buscar(tweets, tweets_normalizados_tokenizados, len_tokeniz
 
 def pedir_y_validar_busqueda():
     """Pide una texto a buscar y verifica que sea valida. Si no lo
-    es vuelve a pedir (excepto en el caso de ATRAS). Devuelve el
-    texto a buscar"""
+    es vuelve a pedir. Devuelve el texto a buscar (excepto en el
+    caso de ATRAS, que devuelve None)."""
 
     while True:
         texto_a_buscar = pedir_busqueda()
 
         if texto_a_buscar == ATRAS:
-            return []
+            return None
 
         busqueda_normalizada = normalizar(texto_a_buscar)
         if busqueda_normalizada == "":
@@ -267,8 +270,9 @@ def validar_ids_seleccionados(lista_de_ids, ids_eliminables):
 def pedir_rutas_e_importar(
     id, tweets, tweets_normalizados_tokenizados, len_tokenizacion
 ):
-    """Llama a pedir_y_validar_rutas() que devuelve rutas validas. Llama a
-    importar_tweets() e imprime el numero de tweets almacenados."""
+    """Llama a pedir_y_validar_rutas() que devuelve, si las hay, rutas validas
+    o None si no y devuelve el id sin modificar. Llama a importar_tweets()
+    e imprime el numero de tweets almacenados."""
 
     id_inicial = id
 
@@ -294,7 +298,8 @@ def pedir_rutas_e_importar(
 
 def pedir_y_validar_rutas():
     """Pide rutas hasta verificar que sean validas. Devuelve
-    una lista de archivos validos."""
+    una lista de archivos validos excepto en el caso de ATRAS
+    que devuelve None."""
 
     while True:
         rutas = pedir_rutas_importar()
@@ -319,83 +324,6 @@ def pedir_y_validar_rutas():
         return archivos_validos
 
 
-def separar_y_validar_rutas(rutas):
-    """Verifica que se ingresen archivo/s y/o ruta/s validas.
-    Devuelve una lista vacia si alguna es invalida y una lista
-    de rutas si todas son validas"""
-
-    if rutas.strip() == "":
-        return None
-
-    rutas_separadas = rutas.split(" ")
-
-    for archivo_o_dir in rutas_separadas:
-        if not os.path.exists(archivo_o_dir):
-            return None
-
-    return rutas_separadas
-
-
-def validar_archivos(rutas_separadas):
-    """Para una lista de rutas, valida cada una. Devuelve
-    una lista o None (para diferenciar de archivos invalidos
-    adentro de un dir y archivos invalidos ingresados directamente)."""
-
-    archivos_validos = []
-
-    for ruta in rutas_separadas:
-        if os.path.isdir(ruta):
-            lista_archivos_de_dir = listar_archivos(ruta)
-            for archivo in lista_archivos_de_dir:
-                if es_txt(archivo) and archivo_valido(archivo):
-                    archivos_validos.append(archivo)
-
-        if not os.path.isdir(ruta):
-            if es_txt(ruta) and archivo_valido(ruta):
-                archivos_validos.append(ruta)
-            else:
-                return None
-
-    return archivos_validos
-
-
-def listar_archivos(ruta):
-    """Recibe un directorio y recorre todas las rutas, almacenando
-    todos los .txt validos e ignorando el resto. Si alguna de las rutas
-    en el directorio es otro directorio hace una llamada recursiva y asi
-    sucesivamente hasta que haya solo archivos (o nada) y va devolviendo
-    los .txt validos.
-    Caso base: no hay ningun directorio/archivo en la ruta actual"""
-
-    archivos = []
-
-    for nombre in os.listdir(ruta):
-        ruta_total = os.path.join(ruta, nombre)
-
-        if os.path.isdir(ruta_total):
-            archivos += listar_archivos(ruta_total)
-        else:
-            if not es_txt(ruta_total):
-                continue
-            archivos.append(ruta_total)
-
-    return archivos
-
-
-def archivo_valido(archivo):
-    try:
-        with open(archivo, "r"):
-            pass
-    except (IOError, OSError, UnicodeDecodeError):
-        return False
-
-    return True
-
-
-def es_txt(archivo):
-    return archivo.lower().endswith(".txt")
-
-
 # -------------------------interfaz-exportar--------------------------
 
 
@@ -418,8 +346,12 @@ def pedir_ruta_y_exportar(tweets):
 
     imprimir_ok_numero(num_tweets_exportados)
 
+    return
+
 
 def validar_ruta_exportar(ruta):
+    """Recibe una ruta y verifica que sea .txt y que exista.
+    Devuelve la ruta si es valida o una cadena vacia si no."""
 
     if not es_txt(ruta):
         imprimir_direccion_erronea()
@@ -437,7 +369,7 @@ def validar_ruta_exportar(ruta):
     return ruta
 
 
-# -------------------------Pedidos-de-input--------------------------
+# -------------------------pedidos-de-input--------------------------
 
 
 def pedir_numero_menu():

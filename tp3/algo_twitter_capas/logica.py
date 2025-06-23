@@ -1,4 +1,5 @@
 import sys
+import os
 
 from manejo_cadenas import normalizar, tokenizar
 from manejo_db import persistir_tweet, eliminar_de_db, almacenar_tweet
@@ -167,6 +168,83 @@ def importar_tweets(
     return id
 
 
+def separar_y_validar_rutas(rutas):
+    """Verifica que se ingresen archivo/s y/o ruta/s validas.
+    Devuelve None si alguna es invalida y una lista de rutas
+    si todas son validas"""
+
+    if rutas.strip() == "":
+        return None
+
+    rutas_separadas = rutas.split(" ")
+
+    for archivo_o_dir in rutas_separadas:
+        if not os.path.exists(archivo_o_dir):
+            return None
+
+    return rutas_separadas
+
+
+def validar_archivos(rutas_separadas):
+    """Para una lista de rutas, valida cada una. Devuelve
+    una lista o None (para diferenciar de archivos invalidos
+    adentro de un dir y archivos invalidos ingresados directamente)."""
+
+    archivos_validos = []
+
+    for ruta in rutas_separadas:
+        if os.path.isdir(ruta):
+            lista_archivos_de_dir = listar_archivos(ruta)
+            for archivo in lista_archivos_de_dir:
+                if es_txt(archivo) and archivo_valido(archivo):
+                    archivos_validos.append(archivo)
+
+        if not os.path.isdir(ruta):
+            if es_txt(ruta) and archivo_valido(ruta):
+                archivos_validos.append(ruta)
+            else:
+                return None
+
+    return archivos_validos
+
+
+def listar_archivos(ruta):
+    """Recibe un directorio y recorre todas las rutas, almacenando
+    todos los .txt validos e ignorando el resto. Si alguna de las rutas
+    en el directorio es otro directorio hace una llamada recursiva y asi
+    sucesivamente hasta que haya solo archivos (o nada) y va devolviendo
+    los .txt validos.
+    Caso base: no hay ningun directorio/archivo en la ruta actual"""
+
+    archivos = []
+
+    for nombre in os.listdir(ruta):
+        ruta_total = os.path.join(ruta, nombre)
+
+        if os.path.isdir(ruta_total):
+            archivos += listar_archivos(ruta_total)
+        else:
+            if not es_txt(ruta_total):
+                continue
+            archivos.append(ruta_total)
+
+    return archivos
+
+
+def archivo_valido(archivo):
+    try:
+        with open(archivo, "r"):
+            pass
+    except (IOError, OSError, UnicodeDecodeError):
+        return False
+
+    return True
+
+
+def es_txt(archivo):
+    return archivo.lower().endswith(".txt")
+
+
 def recorrer_archivos_tweets_importar(
     archivos_validos, len_tokenizacion, id, tweets, tweets_normalizados_tokenizados
 ):
@@ -209,7 +287,9 @@ def almacenar_y_persitir_tweets_importados(
 def exportar_tweets(ruta, tweets):
     """Almacena todos los tweets en memoria a una ruta dada.
     Devuelve el total de tweets exportados."""
+
     num_tweets_exportados = 0
+
     with open(ruta, "w", encoding="utf-8") as archivo:
         for tweet in tweets.values():
             tweet = tweet.rstrip()
